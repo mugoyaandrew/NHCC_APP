@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NHCC + Finara — System Flowcharts</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px 20px; }
+  h1 { text-align: center; font-size: 2rem; margin-bottom: 10px; background: linear-gradient(135deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: #64748b; margin-bottom: 40px; }
+  .chart-section { max-width: 1100px; margin: 0 auto 50px; background: #1e293b; border-radius: 16px; padding: 30px; border: 1px solid #334155; }
+  .chart-section h2 { font-size: 1.3rem; margin-bottom: 20px; color: #f1f5f9; }
+  .mermaid { display: flex; justify-content: center; overflow-x: auto; }
+  .mermaid svg { max-width: 100%; }
+</style>
+</head>
+<body>
+<h1>🏗️ NHCC + Finara — System Flowcharts</h1>
+<p class="subtitle">Complete architecture, logic flows, and AI pipeline</p>
+
+<div class="chart-section">
+<h2>1. 🏛️ System Architecture Overview</h2>
+<div class="mermaid">
+graph TB
+    subgraph USER["User Browser"]
+        UI["React Frontend\nlocalhost:5173"]
+    end
+    subgraph CLIENT["Client - Vite + React"]
+        Router["App Router\n19 Routes"]
+        Auth["Auth Context\nJWT Token"]
+        API["API Client"]
+        AI["AI Engine"]
+        subgraph PAGES["Pages"]
+            Login["Login"]
+            NHCC["NHCC Portal\n11 Pages"]
+            FINARA["Finara Finance\n8 Pages"]
+        end
+        subgraph AI_COMP["AI Components"]
+            Voice["Voice Navigator"]
+            Advisor["AI Advisor"]
+            Anomaly["Anomaly Detector"]
+            Classify["Auto-Categorizer"]
+            Forecast["Budget Forecaster"]
+        end
+    end
+    subgraph SERVER["Backend - Express"]
+        Express["Express Server\nlocalhost:3001"]
+        AuthMW["JWT Middleware"]
+        CRUD["CRUD Router"]
+        AuthRoutes["Auth Routes"]
+    end
+    subgraph DB["Database"]
+        SQLite["SQLite\n14 Tables"]
+    end
+    UI --> Router
+    Router --> Auth
+    Router --> PAGES
+    PAGES --> API
+    API -->|"HTTP /api/*"| Express
+    Express --> AuthMW
+    AuthMW --> CRUD
+    Express --> AuthRoutes
+    CRUD --> SQLite
+    AuthRoutes --> SQLite
+    AI_COMP --> AI
+    PAGES --> AI_COMP
+</div>
+</div>
+
+<div class="chart-section">
+<h2>2. 🔐 Authentication Flow</h2>
+<div class="mermaid">
+flowchart TD
+    START(["User Opens App"]) --> CHECK{"Token in\nlocalStorage?"}
+    CHECK -->|No| LOGIN["Show Login Page"]
+    CHECK -->|Yes| VERIFY["GET /api/auth/me"]
+    VERIFY -->|"200 OK"| DASH["Load Dashboard"]
+    VERIFY -->|"401 Expired"| LOGIN
+    LOGIN --> FORM{"Login or\nRegister?"}
+    FORM -->|Login| CREDS["Enter Email + Password\nor Click Demo Button"]
+    FORM -->|Register| REG["Enter Name + Email + Password"]
+    CREDS --> POST_LOGIN["POST /api/auth/login"]
+    REG --> POST_REG["POST /api/auth/register"]
+    POST_LOGIN --> VALIDATE{"Server Validates"}
+    POST_REG --> VALIDATE
+    VALIDATE -->|Invalid| ERROR["Show Error Message"]
+    ERROR --> LOGIN
+    VALIDATE -->|Valid| TOKEN["Return JWT Token + User"]
+    TOKEN --> STORE["Store Token\nSet AuthContext"]
+    STORE --> DASH
+    DASH --> WHICH{"Which App?"}
+    WHICH -->|NHCC| NHCC_DASH["NHCC Dashboard"]
+    WHICH -->|Finara| FIN_DASH["Finara Dashboard"]
+</div>
+</div>
+
+<div class="chart-section">
+<h2>3. 🏛️ NHCC Portal — Features</h2>
+<div class="mermaid">
+flowchart TD
+    NHCC(["NHCC Portal"]) --> SIDEBAR["Sidebar Navigation"]
+    SIDEBAR --> D["Dashboard"]
+    SIDEBAR --> P["Projects"]
+    SIDEBAR --> T["Tasks"]
+    SIDEBAR --> DOC["Documents"]
+    SIDEBAR --> MSG["Messages"]
+    SIDEBAR --> CAL["Calendar"]
+    SIDEBAR --> ANN["Announcements"]
+    SIDEBAR --> APR["Approvals"]
+    SIDEBAR --> SR["Site Reports"]
+    SIDEBAR --> RPT["Reports"]
+    SIDEBAR --> USR["User Management"]
+    D --> D1["Stat Cards + RAG Pie + Budget"]
+    P --> P1["Card Grid + RAG Filter + CRUD"]
+    T --> T1["Kanban Board - 5 Columns"]
+    APR --> APR1{"Action?"}
+    APR1 -->|Approve| APR2["Update status=approved"]
+    APR1 -->|Reject| APR3["Update status=rejected"]
+</div>
+</div>
+
+<div class="chart-section">
+<h2>4. 💰 Finara Finance — Features</h2>
+<div class="mermaid">
+flowchart TD
+    FIN(["Finara Finance"]) --> FS["Sidebar Navigation"]
+    FS --> FD["Dashboard"]
+    FS --> FI["Income"]
+    FS --> FE["Expenses"]
+    FS --> FA["Analytics"]
+    FS --> FG["Goals"]
+    FS --> FAC["Accounts"]
+    FS --> FIN2["Investments"]
+    FS --> FSET["Settings"]
+    FD --> FD1["Balance Cards"]
+    FD --> FD2["AI Anomaly Alerts"]
+    FD --> FD3["AI Spending Forecast"]
+    FE --> FE1["Category Tabs"]
+    FE --> FE2["Add Expense"]
+    FE2 --> FE3["Type Description"]
+    FE3 --> FE4["AI Auto-Categorize"]
+    FE4 --> FE5["Auto-fill Category"]
+    FG --> FG1["Progress Bars + Add Funds"]
+    FG --> FG2["AI Goal Forecast"]
+</div>
+</div>
+
+<div class="chart-section">
+<h2>5. 🤖 AI Engine — Processing Pipeline</h2>
+<div class="mermaid">
+flowchart TD
+    subgraph VOICE["Voice Navigation"]
+        V1["Click Mic Button"] --> V2["Web Speech API Listens"]
+        V2 --> V3["Speech to Text"]
+        V3 --> V4["Parse Command"]
+        V4 --> V5{"Command Type?"}
+        V5 -->|navigate| V6["Go to Page"]
+        V5 -->|toggle_dark| V7["Switch Theme"]
+        V5 -->|open_advisor| V8["Open Chat"]
+        V5 -->|add_expense| V9["Pre-fill Form"]
+        V5 -->|unknown| V10["Speak Error"]
+        V6 --> V11["Text-to-Speech Response"]
+    end
+    subgraph ADVISOR["AI Financial Advisor"]
+        A1["User Asks Question"] --> A2["Pattern Match Question"]
+        A2 --> A3{"Category?"}
+        A3 -->|health check| A4["Income vs Expenses Analysis"]
+        A3 -->|spending| A5["Category Breakdown"]
+        A3 -->|afford| A6["Balance vs Amount"]
+        A3 -->|goals| A7["Linear Regression Forecast"]
+        A3 -->|tips| A8["Pattern-Based Advice"]
+    end
+    subgraph CLASSIFY["Auto-Categorizer"]
+        C1["Description Input"] --> C2{"Learned Pattern?"}
+        C2 -->|Yes| C3["95% Confidence Match"]
+        C2 -->|No| C4["Keyword Matching"]
+        C4 -->|Match| C5["Return Category + Score"]
+        C4 -->|No Match| C6["No Suggestion"]
+    end
+    subgraph ANOMALY["Anomaly Detection"]
+        AN1["Load Expenses"] --> AN2["Group by Category"]
+        AN2 --> AN3["Mean + Std Deviation"]
+        AN3 --> AN4["Z-Score Each Expense"]
+        AN4 --> AN5{"Z > 1.8?"}
+        AN5 -->|Yes| AN6["Flag as Anomaly"]
+        AN5 -->|No| AN7["Normal"]
+    end
+</div>
+</div>
+
+<div class="chart-section">
+<h2>6. ⚙️ Backend API — Request Flow</h2>
+<div class="mermaid">
+flowchart TD
+    REQ(["HTTP Request"]) --> CORS["CORS"]
+    CORS --> JSON["JSON Parser"]
+    JSON --> ROUTE{"Route?"}
+    ROUTE -->|"/api/auth/*"| AUTH_R["Auth Routes - Public"]
+    ROUTE -->|"/api/*"| JWT["JWT Middleware"]
+    AUTH_R --> AUTH_ACT{"Action?"}
+    AUTH_ACT -->|login| LGN["Validate bcrypt"]
+    AUTH_ACT -->|register| RGS["Hash + Insert"]
+    LGN --> SIGN["Sign JWT"]
+    RGS --> SIGN
+    JWT --> JWT_V{"Valid?"}
+    JWT_V -->|No| E401["401 Error"]
+    JWT_V -->|Yes| DECODE["req.user = decoded"]
+    DECODE --> CRUD{"Method?"}
+    CRUD -->|GET| LIST["SELECT with Filters"]
+    CRUD -->|POST| CREATE["INSERT Row"]
+    CRUD -->|PUT| UPDATE["UPDATE Row"]
+    CRUD -->|DELETE| DEL["DELETE Row"]
+    LIST --> DB[("SQLite")]
+    CREATE --> DB
+    UPDATE --> DB
+    DEL --> DB
+    DB --> RES["JSON Response"]
+</div>
+</div>
+
+<div class="chart-section">
+<h2>7. 🗄️ Database — Entity Relationships</h2>
+<div class="mermaid">
+erDiagram
+    USERS ||--o{ PROJECTS : manages
+    USERS ||--o{ TASKS : assigned
+    USERS ||--o{ DOCUMENTS : uploads
+    USERS ||--o{ APPROVALS : requests
+    USERS ||--o{ SITE_REPORTS : reports
+    USERS ||--o{ ANNOUNCEMENTS : authors
+    USERS ||--o{ MESSAGES : sends
+    USERS ||--o{ INCOME : earns
+    USERS ||--o{ EXPENSES : spends
+    USERS ||--o{ GOALS : targets
+    USERS ||--o{ ACCOUNTS : owns
+    USERS ||--o{ INVESTMENTS : invests
+    PROJECTS ||--o{ TASKS : contains
+    PROJECTS ||--o{ DOCUMENTS : has
+    PROJECTS ||--o{ SITE_REPORTS : logged
+</div>
+</div>
+
+<script>mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#3b82f6', primaryTextColor: '#f1f5f9', primaryBorderColor: '#334155', lineColor: '#64748b', secondaryColor: '#1e293b', tertiaryColor: '#0f172a' }});</script>
+</body>
+</html>
