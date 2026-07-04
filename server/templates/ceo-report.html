@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>NHCC CEO Executive Report</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 32px; color: #0f172a; }
+      h1 { color: #123d6b; }
+      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .card { border: 1px solid #dbe4ee; border-radius: 8px; padding: 14px; background: #f8fafc; }
+      .label { color: #64748b; font-size: 12px; }
+      .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+      th, td { padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+      th { background: #eff6ff; }
+    </style>
+  </head>
+  <body>
+    <h1>NHCC CEO Executive Report</h1>
+    <p>Generated at {{generatedAt}}</p>
+    <div class="grid">
+      <div class="card"><div class="label">Active Projects</div><div class="value">{{activeProjects}}</div></div>
+      <div class="card"><div class="label">Pending Approvals</div><div class="value">{{pendingApprovals}}</div></div>
+      <div class="card"><div class="label">Budget Utilised</div><div class="value">{{budgetUtilisation}}%</div></div>
+      <div class="card"><div class="label">Delayed / Red Projects</div><div class="value">{{redProjects}}</div></div>
+    </div>
+    <h2>Top Risks</h2>
+    <table>
+      <thead><tr><th>Project</th><th>Location</th><th>Status</th><th>Budget</th><th>Spent</th></tr></thead>
+      <tbody>{{riskRows}}</tbody>
+    </table>
+    <h2>Upcoming Deadlines</h2>
+    <table>
+      <thead><tr><th>Task</th><th>Priority</th><th>Due Date</th></tr></thead>
+      <tbody>{{deadlineRows}}</tbody>
+    </table>
+  </body>
+</html>

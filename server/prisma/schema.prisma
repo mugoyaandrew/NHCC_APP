@@ -1,0 +1,403 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  role         String   @default("STAFF")
+  department   String   @default("OPERATIONS")
+  avatar       String?
+  isActive     Boolean  @default(true) @map("is_active")
+  twoFactor    Boolean  @default(false) @map("two_factor")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    Int?     @map("created_by")
+  updatedBy    Int?     @map("updated_by")
+  version      Int      @default(1)
+
+  @@map("users")
+}
+
+model Income {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  sourceName String   @map("source_name")
+  amount     Float
+  frequency  String   @default("monthly")
+  category   String   @default("primary")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdBy  Int?     @map("created_by")
+  updatedBy  Int?     @map("updated_by")
+  version    Int      @default(1)
+
+  @@map("income")
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  description String
+  amount      Float
+  category    String   @default("needs")
+  subcategory String?
+  date        String
+  isRecurring Boolean  @default(false) @map("is_recurring")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("expenses")
+}
+
+model Goal {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  title         String
+  targetAmount  Float    @map("target_amount")
+  currentAmount Float    @default(0) @map("current_amount")
+  deadline      String?
+  icon          String   @default("target")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdBy     Int?     @map("created_by")
+  updatedBy     Int?     @map("updated_by")
+  version       Int      @default(1)
+
+  @@map("goals")
+}
+
+model Account {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  name        String
+  type        String   @default("checking")
+  balance     Float    @default(0)
+  institution String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("accounts")
+}
+
+model Investment {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String
+  type         String   @default("stocks")
+  amount       Float
+  currentValue Float    @map("current_value")
+  purchaseDate String?  @map("purchase_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    Int?     @map("created_by")
+  updatedBy    Int?     @map("updated_by")
+  version      Int      @default(1)
+
+  @@map("investments")
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  status      String   @default("planning")
+  ragStatus   String   @default("green") @map("rag_status")
+  location    String?
+  budget      Float    @default(0)
+  spent       Float    @default(0)
+  completion  Int      @default(0)
+  startDate   String?  @map("start_date")
+  endDate     String?  @map("end_date")
+  managerId   Int?     @map("manager_id")
+  department  String   @default("ENGINEERING")
+  site        String?
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("projects")
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  projectId   Int?     @map("project_id")
+  title       String
+  description String?
+  status      String   @default("backlog")
+  priority    String   @default("medium")
+  assigneeId  Int?     @map("assignee_id")
+  dueDate     String?  @map("due_date")
+  department  String   @default("ENGINEERING")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("tasks")
+}
+
+model Document {
+  id          Int      @id @default(autoincrement())
+  title       String
+  type        String   @default("report")
+  projectId   Int?     @map("project_id")
+  filePath    String?  @map("file_path")
+  fileSize    Int      @default(0) @map("file_size")
+  uploadedBy  Int?     @map("uploaded_by")
+  expiryDate  String?  @map("expiry_date")
+  department  String   @default("OPERATIONS")
+  mimeType    String?  @map("mime_type")
+  versionNo   Int      @default(1) @map("version_no")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("documents")
+}
+
+model Approval {
+  id          Int      @id @default(autoincrement())
+  title       String
+  type        String   @default("general")
+  description String?
+  requestedBy Int?     @map("requested_by")
+  status      String   @default("pending")
+  reviewedBy  Int?     @map("reviewed_by")
+  reviewNotes String?  @map("review_notes")
+  department  String   @default("OPERATIONS")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("approvals")
+}
+
+model SiteReport {
+  id          Int      @id @default(autoincrement())
+  projectId   Int?     @map("project_id")
+  date        String
+  weather     String   @default("sunny")
+  manpower    Int      @default(0)
+  completion  Int      @default(0)
+  workDone    String?  @map("work_done")
+  materials   String?
+  issues      String?
+  reportedBy  Int?     @map("reported_by")
+  site        String?
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("site_reports")
+}
+
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String?
+  priority    String   @default("normal")
+  authorId    Int?     @map("author_id")
+  department  String?
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("announcements")
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  senderId    Int      @map("sender_id")
+  recipientId Int?     @map("recipient_id")
+  subject     String?
+  content     String
+  isRead      Boolean  @default(false) @map("is_read")
+  channel     String?
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("messages")
+}
+
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  headRole    String?  @map("head_role")
+  site        String?
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  version     Int      @default(1)
+
+  @@map("departments")
+}
+
+model ProcurementRecord {
+  id          Int      @id @default(autoincrement())
+  title       String
+  supplier    String
+  category    String
+  amount      Float
+  status      String   @default("draft")
+  projectId   Int?     @map("project_id")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("procurement_records")
+}
+
+model Contract {
+  id          Int      @id @default(autoincrement())
+  title       String
+  party       String
+  value       Float
+  status      String   @default("active")
+  startDate   String?  @map("start_date")
+  expiryDate  String?  @map("expiry_date")
+  projectId   Int?     @map("project_id")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("contracts")
+}
+
+model Invoice {
+  id          Int      @id @default(autoincrement())
+  number      String   @unique
+  supplier    String
+  amount      Float
+  status      String   @default("pending")
+  dueDate     String?  @map("due_date")
+  projectId   Int?     @map("project_id")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("invoices")
+}
+
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  title       String
+  type        String
+  startsAt    DateTime @map("starts_at")
+  endsAt      DateTime @map("ends_at")
+  department  String?
+  site        String?
+  projectId   Int?     @map("project_id")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   Int?     @map("created_by")
+  updatedBy   Int?     @map("updated_by")
+  version     Int      @default(1)
+
+  @@map("calendar_events")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  title       String
+  body        String?
+  type        String   @default("info")
+  isRead      Boolean  @default(false) @map("is_read")
+  isSynthetic Boolean  @default(false) @map("is_synthetic")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  version     Int      @default(1)
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id             Int      @id @default(autoincrement())
+  userId         Int?     @map("user_id")
+  operation      String
+  model          String
+  recordId       String?  @map("record_id")
+  changedFields  String?  @map("changed_fields")
+  previousValues String?  @map("previous_values")
+  newValues      String?  @map("new_values")
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([model, recordId])
+  @@map("audit_logs")
+}
+
+model IdempotencyKey {
+  id          Int      @id @default(autoincrement())
+  key         String
+  userId      Int?     @map("user_id")
+  method      String
+  path        String
+  statusCode  Int?     @map("status_code")
+  response    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@unique([key, userId, method, path])
+  @@map("idempotency_keys")
+}
+
+model ReportSetting {
+  id         Int      @id @default(autoincrement())
+  name       String   @default("CEO Weekly Executive Report")
+  recipients String   @default("ceo@nhcc.go.ug")
+  enabled    Boolean  @default(true)
+  schedule   String   @default("0 8 * * 0")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  version    Int      @default(1)
+
+  @@map("report_settings")
+}

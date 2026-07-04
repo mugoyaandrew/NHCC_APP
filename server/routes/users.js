@@ -1,96 +1,96 @@
 const express = require('express');
-const { getDb, saveDb } = require('../db/init');
+const { prisma } = require('../lib/prisma');
+const { toApiShape } = require('./crud');
+
 const router = express.Router();
 
-function execToObjects(result) {
-  if (!result || result.length === 0) return [];
-  const { columns, values } = result[0];
-  return values.map(row => {
-    const obj = {};
-    columns.forEach((col, i) => { obj[col] = row[i]; });
-    return obj;
-  });
+function canManageUsers(user) {
+  return ['CEO', 'DEPUTY_CEO', 'ICT'].includes(user.role);
 }
 
-function execSingle(result) {
-  const rows = execToObjects(result);
-  return rows[0] || null;
-}
-
-// GET /api/users - list all users
 router.get('/', async (req, res) => {
   try {
-    const db = await getDb();
-    const result = db.exec('SELECT id, email, full_name, role, department, is_active, two_factor, created_at FROM users ORDER BY id');
-    res.json(execToObjects(result));
+    if (!canManageUsers(req.user)) return res.status(403).json({ error: 'User management requires CEO or ICT access' });
+    const users = await prisma.user.findMany({
+      orderBy: { id: 'asc' },
+      select: { id: true, email: true, fullName: true, role: true, department: true, isActive: true, twoFactor: true, createdAt: true, version: true },
+    });
+    res.json(toApiShape(users));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// PUT /api/users/:id
 router.put('/:id', async (req, res) => {
   try {
-    const db = await getDb();
-    const data = { ...req.body };
-    delete data.id;
-    delete data.password_hash;
-    delete data.password;
-
-    const sets = Object.keys(data).map(k => `${k} = ?`).join(', ');
-    const vals = [...Object.values(data), req.params.id];
-    db.run(`UPDATE users SET ${sets} WHERE id = ?`, vals);
-    saveDb();
-
-    const result = db.exec('SELECT id, email, full_name, role, department, is_active, two_factor, created_at FROM users WHERE id = ?', [req.params.id]);
-    res.json(execSingle(result) || { id: req.params.id });
+    if (!canManageUsers(req.user)) return res.status(403).json({ error: 'User management requires CEO or ICT access' });
+    const id = Number(req.params.id);
+    const data = {};
+    for (const key of ['email', 'full_name', 'role', 'department', 'is_active', 'two_factor']) {
+      if (req.body[key] !== undefined) data[key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] = req.body[key];
+    }
+    data.updatedBy = req.user.id;
+    const user = await prisma.user.update({ where: { id }, data: { ...data, version: { increment: 1 } } });
+    const { passwordHash, ...safe } = user;
+    res.json(toApiShape(safe));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /api/users/:id
 router.delete('/:id', async (req, res) => {
   try {
-    const db = await getDb();
-    db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
-    saveDb();
+    if (!canManageUsers(req.user)) return res.status(403).json({ error: 'User management requires CEO or ICT access' });
+    await prisma.user.delete({ where: { id: Number(req.params.id) } });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/users/stats/dashboard - NHCC dashboard stats
 router.get('/stats/dashboard', async (req, res) => {
   try {
-    const db = await getDb();
-
-    const activeProjects = db.exec("SELECT COUNT(*) as c FROM projects WHERE status IN ('planning','in_progress')");
-    const totalTasks = db.exec('SELECT COUNT(*) as c FROM tasks');
-    const pendingApprovals = db.exec("SELECT COUNT(*) as c FROM approvals WHERE status = 'pending'");
-    const totalUsers = db.exec('SELECT COUNT(*) as c FROM users WHERE is_active = 1');
-    const totalDocuments = db.exec('SELECT COUNT(*) as c FROM documents');
-    const unreadMessages = db.exec('SELECT COUNT(*) as c FROM messages WHERE is_read = 0');
-    const totalBudget = db.exec('SELECT COALESCE(SUM(budget),0) as t FROM projects');
-    const totalSpent = db.exec('SELECT COALESCE(SUM(spent),0) as t FROM projects');
-
-    const projectsByRag = db.exec('SELECT rag_status, COUNT(*) as count FROM projects GROUP BY rag_status');
-    const tasksByStatus = db.exec('SELECT status, COUNT(*) as count FROM tasks GROUP BY status');
-    const projectLocations = db.exec('SELECT location, COUNT(*) as count, SUM(budget) as budget, SUM(spent) as spent FROM projects GROUP BY location');
+    const [
+      activeProjects,
+      totalTasks,
+      pendingApprovals,
+      totalUsers,
+      totalDocuments,
+      unreadMessages,
+      budgetAgg,
+      projectsByRag,
+      tasksByStatus,
+      projectLocations,
+    ] = await Promise.all([
+      prisma.project.count({ where: { status: { in: ['planning', 'in_progress'] } } }),
+      prisma.task.count(),
+      prisma.approval.count({ where: { status: 'pending' } }),
+      prisma.user.count({ where: { isActive: true } }),
+      prisma.document.count(),
+      prisma.message.count({ where: { isRead: false } }),
+      prisma.project.aggregate({ _sum: { budget: true, spent: true } }),
+      prisma.project.groupBy({ by: ['ragStatus'], _count: { _all: true } }),
+      prisma.task.groupBy({ by: ['status'], _count: { _all: true } }),
+      prisma.project.groupBy({ by: ['location'], _count: { _all: true }, _sum: { budget: true, spent: true } }),
+    ]);
 
     res.json({
-      activeProjects: activeProjects.length > 0 ? activeProjects[0].values[0][0] : 0,
-      totalTasks: totalTasks.length > 0 ? totalTasks[0].values[0][0] : 0,
-      pendingApprovals: pendingApprovals.length > 0 ? pendingApprovals[0].values[0][0] : 0,
-      totalUsers: totalUsers.length > 0 ? totalUsers[0].values[0][0] : 0,
-      totalDocuments: totalDocuments.length > 0 ? totalDocuments[0].values[0][0] : 0,
-      unreadMessages: unreadMessages.length > 0 ? unreadMessages[0].values[0][0] : 0,
-      totalBudget: totalBudget.length > 0 ? totalBudget[0].values[0][0] : 0,
-      totalSpent: totalSpent.length > 0 ? totalSpent[0].values[0][0] : 0,
-      projectsByRag: execToObjects(projectsByRag),
-      tasksByStatus: execToObjects(tasksByStatus),
-      projectLocations: execToObjects(projectLocations),
+      activeProjects,
+      totalTasks,
+      pendingApprovals,
+      totalUsers,
+      totalDocuments,
+      unreadMessages,
+      totalBudget: budgetAgg._sum.budget || 0,
+      totalSpent: budgetAgg._sum.spent || 0,
+      projectsByRag: projectsByRag.map((row) => ({ rag_status: row.ragStatus, count: row._count._all })),
+      tasksByStatus: tasksByStatus.map((row) => ({ status: row.status, count: row._count._all })),
+      projectLocations: projectLocations.map((row) => ({
+        location: row.location,
+        count: row._count._all,
+        budget: row._sum.budget || 0,
+        spent: row._sum.spent || 0,
+      })),
     });
   } catch (err) {
     console.error('Dashboard stats error:', err);
@@ -98,31 +98,29 @@ router.get('/stats/dashboard', async (req, res) => {
   }
 });
 
-// GET /api/users/stats/finara - Finara dashboard stats
 router.get('/stats/finara', async (req, res) => {
   try {
-    const db = await getDb();
     const userId = req.user.id;
-
-    const totalIncome = db.exec('SELECT COALESCE(SUM(amount),0) as t FROM income WHERE user_id = ? AND is_active = 1', [userId]);
-    const totalExpenses = db.exec('SELECT COALESCE(SUM(amount),0) as t FROM expenses WHERE user_id = ?', [userId]);
-    const totalBalance = db.exec('SELECT COALESCE(SUM(balance),0) as t FROM accounts WHERE user_id = ?', [userId]);
-
-    const expensesByCategory = db.exec('SELECT category, SUM(amount) as total FROM expenses WHERE user_id = ? GROUP BY category', [userId]);
-    const expensesBySubcategory = db.exec('SELECT subcategory, SUM(amount) as total FROM expenses WHERE user_id = ? GROUP BY subcategory ORDER BY total DESC', [userId]);
-    const incomeByCategory = db.exec('SELECT category, SUM(amount) as total FROM income WHERE user_id = ? AND is_active = 1 GROUP BY category', [userId]);
-    const recentExpenses = db.exec('SELECT * FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT 10', [userId]);
-    const goalsProgress = db.exec('SELECT * FROM goals WHERE user_id = ? ORDER BY deadline', [userId]);
+    const [income, expenses, accounts, expensesByCategory, expensesBySubcategory, incomeByCategory, recentExpenses, goalsProgress] = await Promise.all([
+      prisma.income.aggregate({ where: { userId, isActive: true }, _sum: { amount: true } }),
+      prisma.expense.aggregate({ where: { userId }, _sum: { amount: true } }),
+      prisma.account.aggregate({ where: { userId }, _sum: { balance: true } }),
+      prisma.expense.groupBy({ by: ['category'], where: { userId }, _sum: { amount: true } }),
+      prisma.expense.groupBy({ by: ['subcategory'], where: { userId }, _sum: { amount: true }, orderBy: { _sum: { amount: 'desc' } } }),
+      prisma.income.groupBy({ by: ['category'], where: { userId, isActive: true }, _sum: { amount: true } }),
+      prisma.expense.findMany({ where: { userId }, orderBy: { date: 'desc' }, take: 10 }),
+      prisma.goal.findMany({ where: { userId }, orderBy: { deadline: 'asc' } }),
+    ]);
 
     res.json({
-      totalIncome: totalIncome.length > 0 ? totalIncome[0].values[0][0] : 0,
-      totalExpenses: totalExpenses.length > 0 ? totalExpenses[0].values[0][0] : 0,
-      totalBalance: totalBalance.length > 0 ? totalBalance[0].values[0][0] : 0,
-      expensesByCategory: execToObjects(expensesByCategory),
-      expensesBySubcategory: execToObjects(expensesBySubcategory),
-      incomeByCategory: execToObjects(incomeByCategory),
-      recentExpenses: execToObjects(recentExpenses),
-      goalsProgress: execToObjects(goalsProgress),
+      totalIncome: income._sum.amount || 0,
+      totalExpenses: expenses._sum.amount || 0,
+      totalBalance: accounts._sum.balance || 0,
+      expensesByCategory: expensesByCategory.map((row) => ({ category: row.category, total: row._sum.amount || 0 })),
+      expensesBySubcategory: expensesBySubcategory.map((row) => ({ subcategory: row.subcategory, total: row._sum.amount || 0 })),
+      incomeByCategory: incomeByCategory.map((row) => ({ category: row.category, total: row._sum.amount || 0 })),
+      recentExpenses: toApiShape(recentExpenses),
+      goalsProgress: toApiShape(goalsProgress),
     });
   } catch (err) {
     console.error('Finara stats error:', err);
