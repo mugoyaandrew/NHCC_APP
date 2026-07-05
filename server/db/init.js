@@ -27,6 +27,19 @@ function saveDb() {
   }
 }
 
+function columnExists(db, tableName, columnName) {
+  const result = db.exec(`PRAGMA table_info(${tableName})`);
+  if (!result || result.length === 0) return false;
+  const nameIndex = result[0].columns.indexOf('name');
+  return result[0].values.some(row => row[nameIndex] === columnName);
+}
+
+function addColumnIfMissing(db, tableName, columnName, definition) {
+  if (!columnExists(db, tableName, columnName)) {
+    db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
 // Auto-save every 5 seconds
 setInterval(saveDb, 5000);
 
@@ -36,6 +49,18 @@ async function initializeDatabase() {
   // Run schema
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.run(schema);
+  addColumnIfMissing(db, 'approvals', 'reviewed_at', 'DATETIME');
+
+  // Keep existing demo databases aligned with the ASCII-safe seed values.
+  const goalIconUpdates = [
+    ['Shield', 'Emergency Fund'],
+    ['Car', 'New Car'],
+    ['Travel', 'Vacation Fund'],
+    ['Growth', 'Investment Portfolio'],
+  ];
+  for (const [icon, title] of goalIconUpdates) {
+    db.run('UPDATE goals SET icon = ? WHERE title = ?', [icon, title]);
+  }
 
   // Check if already seeded
   const result = db.exec('SELECT COUNT(*) as count FROM users');
@@ -45,7 +70,7 @@ async function initializeDatabase() {
     return;
   }
 
-  console.log('🌱 Seeding database with demo data...');
+  console.log('Seeding database with demo data...');
 
   const hash = bcrypt.hashSync('password123', 10);
 
@@ -188,10 +213,10 @@ async function initializeDatabase() {
   }
 
   const goalData = [
-    [9, 'Emergency Fund', 10000000, 6500000, '2025-12-31', '🛡️'],
-    [9, 'New Car', 35000000, 12000000, '2026-06-30', '🚗'],
-    [9, 'Vacation Fund', 5000000, 3200000, '2025-09-30', '✈️'],
-    [9, 'Investment Portfolio', 50000000, 18000000, '2027-12-31', '📈'],
+    [9, 'Emergency Fund', 10000000, 6500000, '2025-12-31', 'Shield'],
+    [9, 'New Car', 35000000, 12000000, '2026-06-30', 'Car'],
+    [9, 'Vacation Fund', 5000000, 3200000, '2025-09-30', 'Travel'],
+    [9, 'Investment Portfolio', 50000000, 18000000, '2027-12-31', 'Growth'],
   ];
   for (const g of goalData) {
     db.run('INSERT INTO goals (user_id, title, target_amount, current_amount, deadline, icon) VALUES (?,?,?,?,?,?)', g);
@@ -218,7 +243,7 @@ async function initializeDatabase() {
   }
 
   saveDb();
-  console.log('✅ Database seeded successfully!');
+  console.log('Database seeded successfully!');
 }
 
 module.exports = { getDb, initializeDatabase, saveDb };

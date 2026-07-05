@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS goals (
   target_amount REAL NOT NULL,
   current_amount REAL DEFAULT 0,
   deadline TEXT,
-  icon TEXT DEFAULT '🎯',
+  icon TEXT DEFAULT 'Goal',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS approvals (
   status TEXT DEFAULT 'pending',
   reviewed_by INTEGER,
   review_notes TEXT,
+  reviewed_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (requested_by) REFERENCES users(id),
   FOREIGN KEY (reviewed_by) REFERENCES users(id)
@@ -179,4 +180,21 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (sender_id) REFERENCES users(id),
   FOREIGN KEY (recipient_id) REFERENCES users(id)
+);
+
+-- Enterprise: Audit Trail
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  user_email TEXT,
+  operation TEXT NOT NULL,
+  model TEXT NOT NULL,
+  record_id TEXT,
+  changed_fields TEXT,
+  previous_values TEXT,
+  new_values TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );

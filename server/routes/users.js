@@ -1,6 +1,9 @@
 const express = require('express');
 const { getDb, saveDb } = require('../db/init');
+const { writeAuditLog, requireRoles } = require('../lib/audit');
 const router = express.Router();
+
+const manageUsers = requireRoles('CEO', 'HR', 'ICT');
 
 function execToObjects(result) {
   if (!result || result.length === 0) return [];
@@ -18,7 +21,7 @@ function execSingle(result) {
 }
 
 // GET /api/users - list all users
-router.get('/', async (req, res) => {
+router.get('/', manageUsers, async (req, res) => {
   try {
     const db = await getDb();
     const result = db.exec('SELECT id, email, full_name, role, department, is_active, two_factor, created_at FROM users ORDER BY id');
@@ -29,7 +32,7 @@ router.get('/', async (req, res) => {
 });
 
 // PUT /api/users/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', manageUsers, async (req, res) => {
   try {
     const db = await getDb();
     const data = { ...req.body };
@@ -37,24 +40,45 @@ router.put('/:id', async (req, res) => {
     delete data.password_hash;
     delete data.password;
 
+    const previous = execSingle(db.exec('SELECT id, email, full_name, role, department, is_active, two_factor, created_at FROM users WHERE id = ?', [req.params.id]));
+
     const sets = Object.keys(data).map(k => `${k} = ?`).join(', ');
     const vals = [...Object.values(data), req.params.id];
     db.run(`UPDATE users SET ${sets} WHERE id = ?`, vals);
     saveDb();
 
     const result = db.exec('SELECT id, email, full_name, role, department, is_active, two_factor, created_at FROM users WHERE id = ?', [req.params.id]);
-    res.json(execSingle(result) || { id: req.params.id });
+    const updated = execSingle(result);
+    if (previous && updated) {
+      await writeAuditLog(req, {
+        operation: 'UPDATE',
+        model: 'users',
+        recordId: req.params.id,
+        previousValues: previous,
+        newValues: updated,
+      });
+    }
+    res.json(updated || { id: req.params.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // DELETE /api/users/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', manageUsers, async (req, res) => {
   try {
     const db = await getDb();
+    const previous = execSingle(db.exec('SELECT id, email, full_name, role, department, is_active, two_factor, created_at FROM users WHERE id = ?', [req.params.id]));
     db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
     saveDb();
+    if (previous) {
+      await writeAuditLog(req, {
+        operation: 'DELETE',
+        model: 'users',
+        recordId: req.params.id,
+        previousValues: previous,
+      });
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
