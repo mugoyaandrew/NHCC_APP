@@ -9,6 +9,35 @@ const districts = ['Kampala', 'Wakiso', 'Mukono', 'Jinja', 'Mbale', 'Gulu', 'Lir
 const ugandanNames = ['James Mukasa', 'Sarah Nakamya', 'David Ochieng', 'Grace Auma', 'Peter Ssempala', 'Mary Nalubega', 'John Kato', 'Rita Nambi', 'Joseph Okello', 'Aisha Namutebi', 'Daniel Kiggundu', 'Agnes Akello', 'Samuel Byaruhanga', 'Esther Nanyonga'];
 const suppliers = ['Mukwano Builders Ltd', 'Roko Construction', 'Roofings Uganda', 'Steel & Tube Industries', 'Uganda Clays', 'Hima Cement', 'National Water Works', 'Kiira Electricals', 'Pearl Logistics', 'Nile Procurement Services'];
 
+const englishSentences = [
+  'Please review the attached documents for the upcoming phase.',
+  'Site inspection completed with minor issues noted.',
+  'Awaiting approval from the finance department.',
+  'Procurement for raw materials is on schedule.',
+  'The contractor has requested a timeline extension.',
+  'Foundation work is progressing faster than expected.',
+  'Safety briefing conducted for all new site workers.',
+  'Pending review of the latest architectural blueprints.',
+  'Quality assurance checks passed for the first floor.',
+  'Initial site survey completed successfully.'
+];
+
+const taskDescriptions = [
+  'Conduct structural analysis of the main supporting pillars.',
+  'Review and finalize the supplier contracts for Q3.',
+  'Ensure all safety protocols are being followed on site.',
+  'Update the project timeline and notify stakeholders.',
+  'Coordinate with the logistics team for material delivery.'
+];
+
+const messageContents = [
+  'Can we schedule a meeting to discuss the budget overruns?',
+  'I have uploaded the revised site plans to the shared folder.',
+  'Please approve the latest invoice from the steel supplier.',
+  'Just a reminder that the site inspection is tomorrow at 9 AM.',
+  'The client has requested some changes to the exterior finishing.'
+];
+
 function pick(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
@@ -123,8 +152,8 @@ async function main() {
     await prisma.task.create({
       data: {
         projectId: project.id,
-        title: `${pick(['Foundation', 'Procurement', 'Inspection', 'MEP', 'Roofing', 'Finishing', 'Survey'])} ${faker.word.words({ count: { min: 2, max: 4 } })}`,
-        description: faker.lorem.sentence(),
+        title: `${pick(['Foundation', 'Procurement', 'Inspection', 'MEP', 'Roofing', 'Finishing', 'Survey'])} ${pick(['Phase 1', 'Review', 'Updates', 'Check', 'Preparation', 'Finalization'])}`,
+        description: pick(taskDescriptions),
         status: pick(['backlog', 'in_progress', 'under_review', 'done', 'blocked']),
         priority: pick(['critical', 'high', 'medium', 'low']),
         assigneeId: pick(staff).id,
@@ -201,9 +230,9 @@ async function main() {
         weather: pick(['sunny', 'cloudy', 'rainy']),
         manpower: faker.number.int({ min: 12, max: 260 }),
         completion: project.completion,
-        workDone: faker.lorem.sentence(),
+        workDone: pick(englishSentences),
         materials: `${pick(['cement', 'steel', 'sand', 'aggregate'])}: ${faker.number.int({ min: 10, max: 800 })} units`,
-        issues: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.35 }) || 'None reported',
+        issues: faker.helpers.maybe(() => pick(englishSentences), { probability: 0.35 }) || 'None reported',
         reportedBy: pick(staff).id,
         site: project.site,
         isSynthetic: true,
@@ -216,7 +245,7 @@ async function main() {
       data: {
         title: `${pick(['Budget', 'Procurement', 'Contract', 'HR', 'Travel'])} approval ${i + 1}`,
         type: pick(['budget', 'procurement', 'contract', 'hr', 'travel']),
-        description: faker.lorem.sentence(),
+        description: pick(englishSentences),
         requestedBy: pick(staff).id,
         status: pick(['pending', 'approved', 'rejected', 'returned']),
         reviewedBy: faker.helpers.maybe(() => pick(staff).id, { probability: 0.6 }) || null,
@@ -232,7 +261,7 @@ async function main() {
         senderId: pick(staff).id,
         recipientId: faker.helpers.maybe(() => pick(staff).id, { probability: 0.7 }) || null,
         subject: pick(['Site update', 'Procurement clarification', 'Approval follow-up', 'Inspection notes']),
-        content: faker.lorem.sentences({ min: 1, max: 2 }),
+        content: pick(messageContents),
         channel: pick(['site-kampala', 'engineering', 'procurement-engineering', 'finance-approvals']),
         isSynthetic: true,
       },
@@ -261,7 +290,7 @@ async function main() {
       data: {
         userId: pick(staff).id,
         title: pick(['Task assigned', 'Approval required', 'Contract expiring', 'Budget threshold reached', 'New site report']),
-        body: faker.lorem.sentence(),
+        body: pick(englishSentences),
         type: pick(['task', 'approval', 'contract', 'budget', 'site_report']),
         isSynthetic: true,
       },

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NHCC Enterprise Enhancements — Progress Audit</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #1e293b;
+      background: #fff;
+      line-height: 1.6;
+      padding: 40px 60px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media print {
+      body { padding: 20px 30px; font-size: 11px; }
+      .page-break { page-break-before: always; }
+      h2 { page-break-after: avoid; }
+      table { page-break-inside: avoid; }
+    }
+
+    /* Header */
+    .header {
+      border-bottom: 3px solid #1e40af;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #1e40af;
+      letter-spacing: -0.5px;
+    }
+    .header .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .header .date {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+
+    /* Overall Score */
+    .overall-score {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .overall-score .label { font-size: 18px; font-weight: 600; }
+    .overall-score .percent { font-size: 48px; font-weight: 800; }
+    .overall-score .note { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+    /* Section */
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 36px;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    /* Phase cards */
+    .phase {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: #fafbfc;
+    }
+    .phase-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .phase-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .phase-badge {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 20px;
+      color: white;
+    }
+    .badge-green { background: #16a34a; }
+    .badge-amber { background: #d97706; }
+    .badge-red { background: #dc2626; }
+
+    /* Progress bar */
+    .progress-bar-container {
+      background: #e2e8f0;
+      border-radius: 6px;
+      height: 8px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.3s;
+    }
+    .bar-green { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .bar-amber { background: linear-gradient(90deg, #d97706, #f59e0b); }
+    .bar-red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #475569;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* Status icons */
+    .done { color: #16a34a; font-weight: 600; }
+    .partial { color: #d97706; font-weight: 600; }
+    .missing { color: #dc2626; font-weight: 600; }
+
+    /* Lists */
+    ul { padding-left: 20px; margin: 6px 0; }
+    li { margin-bottom: 4px; font-size: 13px; color: #475569; }
+
+    /* Info box */
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 14px 0;
+      font-size: 13px;
+      color: #1e40af;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 14px 0;
+      font-size: 13px;
+      color: #92400e;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    p { font-size: 13px; color: #475569; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>NHCC Enterprise Enhancements</h1>
+    <div class="subtitle">Progress Audit Report</div>
+    <div class="date">Generated: July 4, 2026 &nbsp;|&nbsp; Branch: codex/enterprise-enhancements &nbsp;|&nbsp; Commit: 107c0be</div>
+  </div>
+
+  <!-- Overall Score -->
+  <div class="overall-score">
+    <div>
+      <div class="label">Overall Completion</div>
+      <div class="note">Backend foundation is solid. Frontend & tests are the primary gaps.</div>
+    </div>
+    <div class="percent">~35%</div>
+  </div>
+
+  <!-- Decisions Made -->
+  <h2>Key Architectural Decisions</h2>
+  <table>
+    <tr><th>Decision</th><th>Choice Made</th><th>Rationale</th></tr>
+    <tr><td>Database</td><td>SQLite via Prisma (local dev)</td><td>Zero setup — no Docker or PostgreSQL install needed</td></tr>
+    <tr><td>File Storage</td><td>Local filesystem adapter</td><td>Works immediately; interface can swap to Supabase/S3 later</td></tr>
+    <tr><td>Email</td><td>Mock/preview mode (saves HTML locally)</td><td>No SMTP credentials needed; just add them when ready</td></tr>
+  </table>
+
+  <!-- Summary Table -->
+  <h2>Phase Completion Summary</h2>
+  <table>
+    <tr><th>Phase</th><th>Description</th><th>Backend</th><th>Frontend</th><th>Tests</th><th>Overall</th></tr>
+    <tr><td>0</td><td>Prisma Migration</td><td class="done">95%</td><td>N/A</td><td class="missing">0%</td><td><strong>90%</strong></td></tr>
+    <tr><td>1</td><td>Audit Trail</td><td class="done">95%</td><td class="missing">0%</td><td class="missing">0%</td><td><strong>80%</strong></td></tr>
+    <tr><td>2</td><td>Concurrency Control</td><td class="done">85%</td><td class="missing">0%</td><td class="missing">0%</td><td><strong>70%</strong></td></tr>
+    <tr><td>3</td><td>Synthetic Data</td><td class="done">90%</td><td class="missing">0%</td><td class="missing">0%</td><td><strong>85%</strong></td></tr>
+    <tr><td>4</td><td>Deployment</td><td class="missing">0%</td><td class="missing">0%</td><td class="missing">0%</td><td class="missing"><strong>0%</strong></td></tr>
+    <tr><td>5</td><td>Real-Time</td><td class="partial">50%</td><td class="missing">0%</td><td class="missing">0%</td><td><strong>40%</strong></td></tr>
+    <tr><td>6</td><td>File Sharing</td><td class="partial">40%</td><td class="missing">0%</td><td class="missing">0%</td><td><strong>30%</strong></td></tr>
+    <tr><td>7</td><td>CEO Reports</td><td class="partial">60%</td><td class="missing">0%</td><td class="missing">0%</td><td><strong>50%</strong></td></tr>
+    <tr><td>8</td><td>ML Service</td><td class="missing">0%</td><td class="missing">0%</td><td class="missing">0%</td><td class="missing"><strong>0%</strong></td></tr>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- Phase 0 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 0 — Prisma Migration</span>
+      <span class="phase-badge badge-green">90%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-green" style="width:90%"></div></div>
+    <p>The entire data layer was migrated from raw sql.js (SQLite in WASM) to <strong>Prisma ORM</strong> with 22 models.</p>
+    <h3>Files Created / Modified</h3>
+    <table>
+      <tr><th>File</th><th>Action</th><th>Purpose</th></tr>
+      <tr><td>prisma/schema.prisma</td><td>NEW</td><td>22 Prisma models with @map() for snake_case DB columns</td></tr>
+      <tr><td>prisma/bootstrap-sqlite.js</td><td>NEW</td><td>Creates SQLite DB with new schema</td></tr>
+      <tr><td>lib/prisma.js</td><td>NEW</td><td>Prisma singleton + $extends audit interceptor</td></tr>
+      <tr><td>routes/crud.js</td><td>REWRITTEN</td><td>Prisma queries, camelCase↔snake_case, pagination</td></tr>
+      <tr><td>routes/auth.js</td><td>REWRITTEN</td><td>Prisma queries for login/register/me</td></tr>
+      <tr><td>routes/users.js</td><td>REWRITTEN</td><td>Prisma aggregations for dashboard stats</td></tr>
+      <tr><td>index.js</td><td>REWRITTEN</td><td>Socket.io, new routes, new middleware chain</td></tr>
+    </table>
+    <div class="warning-box">
+      <strong>Gap:</strong> No Prisma @relation() annotations — foreign keys exist as columns but aren't typed as Prisma relations, so auto-join via <code>include</code> is unavailable.
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 1 — Enterprise Audit Trail</span>
+      <span class="phase-badge badge-green">80%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-green" style="width:80%"></div></div>
+    <p>Every create/update/delete operation is <strong>automatically logged</strong> via AsyncLocalStorage + Prisma <code>$extends</code>. Developers never need to manually write audit entries.</p>
+    <h3>How It Works</h3>
+    <ul>
+      <li><strong>async-context.js</strong> — Creates an AsyncLocalStorage that holds user ID, IP address, and User-Agent for each request</li>
+      <li><strong>request-context.js</strong> — Express middleware that wraps every request in the AsyncLocalStorage context</li>
+      <li><strong>prisma.js $extends</strong> — Intercepts every Prisma create/update/delete, reads the context, and writes an AuditLog row</li>
+      <li><strong>audit.js route</strong> — GET /api/audit endpoint restricted to CEO and ICT roles</li>
+    </ul>
+    <h3>AuditLog captures</h3>
+    <table>
+      <tr><th>Field</th><th>Description</th></tr>
+      <tr><td>userId</td><td>Who performed the action</td></tr>
+      <tr><td>operation</td><td>CREATE / UPDATE / DELETE</td></tr>
+      <tr><td>model</td><td>Which table/entity was affected</td></tr>
+      <tr><td>recordId</td><td>ID of the affected record</td></tr>
+      <tr><td>changedFields</td><td>JSON array of field names that changed</td></tr>
+      <tr><td>previousValues</td><td>Full JSON snapshot before the change</td></tr>
+      <tr><td>newValues</td><td>Full JSON snapshot after the change</td></tr>
+      <tr><td>ipAddress</td><td>Client IP address</td></tr>
+      <tr><td>userAgent</td><td>Client browser/app identifier</td></tr>
+    </table>
+    <div class="warning-box"><strong>Gap:</strong> No frontend Audit Logs page. No sidebar navigation entry. No tests.</div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 2 — Concurrent Data Protection</span>
+      <span class="phase-badge badge-green">70%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-amber" style="width:70%"></div></div>
+    <p>Optimistic locking prevents data loss when two users edit the same record simultaneously.</p>
+    <h3>Mechanisms Implemented</h3>
+    <ul>
+      <li><strong>Version field</strong> — Every mutable model has a <code>version</code> column (default 1)</li>
+      <li><strong>Optimistic locking</strong> — PUT requests check the submitted version against the DB version. If mismatched → 409 Conflict</li>
+      <li><strong>Idempotency-Key middleware</strong> — Prevents duplicate form submissions. Caches the response for repeat requests with the same key</li>
+      <li><strong>IdempotencyKey model</strong> — Compound unique on (key, userId, method, path)</li>
+    </ul>
+    <div class="warning-box"><strong>Gap:</strong> Client-side doesn't generate Idempotency-Key headers yet. No ConflictDialog component. No concurrency integration tests.</div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 3 — Realistic Synthetic Data</span>
+      <span class="phase-badge badge-green">85%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-green" style="width:85%"></div></div>
+    <p>Full Ugandan-context seed using <code>@faker-js/faker</code> with <code>isSynthetic</code> flags for safe purge.</p>
+    <h3>Data Generated</h3>
+    <table>
+      <tr><th>Entity</th><th>Count</th><th>Status</th></tr>
+      <tr><td>Departments</td><td>8</td><td class="done">✅</td></tr>
+      <tr><td>Users</td><td>14+ base</td><td class="done">✅</td></tr>
+      <tr><td>Projects</td><td>100+</td><td class="done">✅</td></tr>
+      <tr><td>Tasks</td><td>500+</td><td class="done">✅</td></tr>
+      <tr><td>Documents</td><td>200+</td><td class="done">✅</td></tr>
+      <tr><td>Procurement Records</td><td>100+</td><td class="done">✅</td></tr>
+      <tr><td>Contracts</td><td>50+</td><td class="done">✅</td></tr>
+      <tr><td>Invoices</td><td>200+</td><td class="done">✅</td></tr>
+      <tr><td>Approvals</td><td>80+</td><td class="done">✅</td></tr>
+      <tr><td>Site Reports</td><td>150+</td><td class="done">✅</td></tr>
+      <tr><td>Messages</td><td>300+</td><td class="done">✅</td></tr>
+      <tr><td>Notifications</td><td>200+</td><td class="done">✅</td></tr>
+      <tr><td>Calendar Events</td><td>100+</td><td class="done">✅</td></tr>
+    </table>
+    <h3>Admin Tools</h3>
+    <ul>
+      <li><strong>POST /api/seed/synthetic</strong> — Re-generate all synthetic data (CEO/ICT only)</li>
+      <li><strong>DELETE /api/seed/synthetic</strong> — Purge synthetic data only, preserving real records</li>
+    </ul>
+    <div class="warning-box"><strong>Gap:</strong> No frontend DataManagement page. Finara personal finance seed data not included.</div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- Phase 5 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 5 — Real-Time Collaboration</span>
+      <span class="phase-badge badge-amber">40%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-amber" style="width:40%"></div></div>
+    <p>Socket.io server infrastructure is running with room architecture, but nothing connects from the client.</p>
+    <h3>Server-Side (Done)</h3>
+    <ul>
+      <li>Socket.io server attached to HTTP server with CORS</li>
+      <li>Room auto-join: <code>user:{id}</code>, <code>department:{name}</code>, <code>site:{name}</code></li>
+      <li>Manual room join: <code>project:{id}</code> via socket event</li>
+      <li>Helper functions: <code>broadcastCrudEvent()</code>, <code>broadcastFileShared()</code></li>
+      <li>Connection state recovery (120s)</li>
+      <li><code>socket.io-client</code> dependency added to frontend</li>
+    </ul>
+    <div class="warning-box"><strong>Gap:</strong> CRUD operations don't call <code>broadcastCrudEvent()</code>. No client-side socket hook, context, or ConnectionStatus component. No React Query cache invalidation on events.</div>
+  </div>
+
+  <!-- Phase 6 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 6 — Instant File Sharing</span>
+      <span class="phase-badge badge-amber">30%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-amber" style="width:30%"></div></div>
+    <p>Basic file upload works via multer. No chunked uploads, progress bars, or frontend integration.</p>
+    <h3>Done</h3>
+    <ul>
+      <li>POST /api/uploads — Saves files to <code>server/uploads/</code>, creates Document record</li>
+      <li>Static file serving at <code>/uploads/*</code></li>
+      <li><code>file:shared</code> socket broadcast on upload</li>
+      <li>50MB file size limit</li>
+    </ul>
+    <div class="warning-box"><strong>Gap:</strong> No chunked uploads, progress tracking, retry logic, FileUploader component, drag-and-drop, or offline queue.</div>
+  </div>
+
+  <!-- Phase 7 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 7 — CEO Automated Reports</span>
+      <span class="phase-badge badge-amber">50%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-amber" style="width:50%"></div></div>
+    <p>Report generation job runs on cron and can be triggered manually. Saves HTML to disk.</p>
+    <h3>KPIs Included</h3>
+    <ul>
+      <li>Active Projects count</li>
+      <li>Pending Approvals count</li>
+      <li>Budget Utilisation percentage</li>
+      <li>Red/Delayed Projects count</li>
+      <li>Top 10 Risk Projects table (name, location, RAG status, budget, spent)</li>
+      <li>Top 10 Upcoming Deadlines table (task, priority, due date)</li>
+    </ul>
+    <h3>Schedule</h3>
+    <ul>
+      <li>Automatic: Every Sunday at 08:00 AM East Africa Time</li>
+      <li>Manual: POST /api/reports/ceo (CEO/Finance roles only)</li>
+    </ul>
+    <div class="warning-box"><strong>Gap:</strong> No PDF (only HTML). No email delivery. No frontend settings page. No charts in the report. No procurement/financial summary.</div>
+  </div>
+
+  <!-- Phase 4 & 8 -->
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-title">Phase 4 — Deployment & Phase 8 — ML Service</span>
+      <span class="phase-badge badge-red">0%</span>
+    </div>
+    <div class="progress-bar-container"><div class="progress-bar bar-red" style="width:0%"></div></div>
+    <p>These two phases have <strong>not been started</strong>.</p>
+    <h3>Phase 4 Missing</h3>
+    <ul>
+      <li>Backend, Frontend, ML Dockerfiles</li>
+      <li>docker-compose.yml</li>
+      <li>GitHub Actions CI/CD pipeline</li>
+      <li>vercel.json</li>
+      <li>Deployment documentation</li>
+    </ul>
+    <h3>Phase 8 Missing</h3>
+    <ul>
+      <li>Python FastAPI microservice</li>
+      <li>Budget forecast model (Linear Regression + ARIMA)</li>
+      <li>Risk classification model (scikit-learn)</li>
+      <li>JWT auth guard for Python</li>
+      <li>Dockerfile, README, API docs</li>
+    </ul>
+  </div>
+
+  <!-- What Remains -->
+  <h2>What Remains To Be Done</h2>
+  <div class="info-box">
+    <strong>Priority 1 — Frontend pages:</strong> AuditLogs, DataManagement, ReportSettings, FileUploader, FinancialAdvisor<br>
+    <strong>Priority 2 — Client Socket.io:</strong> useSocket hook, SocketContext, ConnectionStatus, React Query invalidation<br>
+    <strong>Priority 3 — Tests:</strong> Unit + Integration tests for all phases<br>
+    <strong>Priority 4 — Deployment:</strong> Dockerfiles, docker-compose, CI/CD<br>
+    <strong>Priority 5 — ML Service:</strong> FastAPI, forecast models, risk models
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    NHCC Enterprise Project Management System — Progress Audit &nbsp;|&nbsp; Prepared July 4, 2026 &nbsp;|&nbsp; Confidential
+  </div>
+
+</body>
+</html>
