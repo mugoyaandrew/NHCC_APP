@@ -45,6 +45,8 @@ app.use('/api/investments', protectedMiddleware, createCrudRouter('investments',
 app.use('/api/projects', protectedMiddleware, createCrudRouter('projects', { allowedFilters: ['status', 'rag_status', 'location', 'department', 'site'] }));
 app.use('/api/tasks', protectedMiddleware, createCrudRouter('tasks', { allowedFilters: ['status', 'priority', 'project_id', 'assignee_id', 'department'] }));
 app.use('/api/documents', protectedMiddleware, createCrudRouter('documents', { allowedFilters: ['type', 'project_id', 'department'] }));
+const approvalsCustomRoutes = require('./routes/approvals');
+app.use('/api/approvals', protectedMiddleware, approvalsCustomRoutes);
 app.use('/api/approvals', protectedMiddleware, createCrudRouter('approvals', { allowedFilters: ['status', 'type', 'department'] }));
 app.use('/api/site-reports', protectedMiddleware, createCrudRouter('site_reports', { allowedFilters: ['project_id', 'weather', 'site'] }));
 app.use('/api/announcements', protectedMiddleware, createCrudRouter('announcements', { allowedFilters: ['priority', 'department'] }));

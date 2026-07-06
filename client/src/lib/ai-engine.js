@@ -1,5 +1,5 @@
 /**
- * AI Engine — Client-side intelligence for NHCC + Finara
+ * AI Engine - Client-side intelligence for NHCC + Finara
  * No external APIs needed. All runs in the browser.
  */
 
@@ -317,14 +317,14 @@ export function generateAdvisorResponse(question, financialData) {
 
   // Greeting
   if (q.match(/^(hi|hello|hey|good morning|good evening|good afternoon)/)) {
-    return { text: `Hello! 👋 I'm your AI Financial Advisor. I can analyze your spending, forecast goals, and give personalized tips. Try asking:\n\n• "How am I doing this month?"\n• "Where am I spending the most?"\n• "Can I afford a 2M purchase?"\n• "How long until I reach my goals?"\n• "Give me a savings tip"`, type: 'greeting' };
+    return { text: `Hello! I'm your AI Financial Advisor. I can analyze your spending, forecast goals, and give personalized tips. Try asking:\n\n- "How am I doing this month?"\n- "Where am I spending the most?"\n- "Can I afford a 2M purchase?"\n- "How long until I reach my goals?"\n- "Give me a savings tip"`, type: 'greeting' };
   }
 
   // How am I doing
   if (q.includes('how am i doing') || q.includes('financial health') || q.includes('overview') || q.includes('summary')) {
-    const status = savingsRate > 20 ? '🟢 Great' : savingsRate > 10 ? '🟡 Fair' : '🔴 Needs attention';
+    const status = savingsRate > 20 ? 'Great' : savingsRate > 10 ? 'Fair' : 'Needs attention';
     return {
-      text: `📊 **Monthly Financial Health: ${status}**\n\n💰 Income: ${formatNum(totalIncome)}\n💸 Expenses: ${formatNum(totalExpenses)}\n📈 Savings: ${formatNum(balance)} (${savingsRate}% rate)\n🏦 Bank Balance: ${formatNum(totalBalance)}\n\n${savingsRate > 20 ? "You're saving well! Keep it up. The recommended savings rate is 20%+." : savingsRate > 10 ? "You're doing okay, but try to increase your savings rate to 20%." : "⚠️ Your savings rate is low. Consider cutting discretionary spending."}`,
+      text: `**Monthly Financial Health: ${status}**\n\nIncome: ${formatNum(totalIncome)}\nExpenses: ${formatNum(totalExpenses)}\nSavings: ${formatNum(balance)} (${savingsRate}% rate)\nBank Balance: ${formatNum(totalBalance)}\n\n${savingsRate > 20 ? "You're saving well! Keep it up. The recommended savings rate is 20%+." : savingsRate > 10 ? "You're doing okay, but try to increase your savings rate to 20%." : "Warning: Your savings rate is low. Consider cutting discretionary spending."}`,
       type: 'analysis',
     };
   }
@@ -334,7 +334,7 @@ export function generateAdvisorResponse(question, financialData) {
     const sorted = [...expensesByCategory].sort((a, b) => b.total - a.total);
     const breakdown = sorted.map((c, i) => `${i + 1}. **${c.category}**: ${formatNum(c.total)} (${totalExpenses > 0 ? Math.round(c.total / totalExpenses * 100) : 0}%)`).join('\n');
     return {
-      text: `📊 **Spending Breakdown:**\n\n${breakdown || 'No expense data yet.'}\n\n${sorted[0]?.category === 'wants' ? "💡 Tip: Your discretionary ('wants') spending is your top category. Consider if some of these can be reduced." : "Your spending pattern looks reasonable with needs being prioritized."}`,
+      text: `**Spending Breakdown:**\n\n${breakdown || 'No expense data yet.'}\n\n${sorted[0]?.category === 'wants' ? "Tip: Your discretionary ('wants') spending is your top category. Consider if some of these can be reduced." : "Your spending pattern looks reasonable with needs being prioritized."}`,
       type: 'analysis',
     };
   }
@@ -355,7 +355,7 @@ export function generateAdvisorResponse(question, financialData) {
     const canAfford = totalBalance >= amount;
     const impactPct = totalBalance > 0 ? Math.round(amount / totalBalance * 100) : 100;
     return {
-      text: `${canAfford ? '✅' : '⚠️'} **Can you afford ${formatNum(amount)}?**\n\n🏦 Current Balance: ${formatNum(totalBalance)}\n💳 Purchase Amount: ${formatNum(amount)}\n📉 Impact: ${impactPct}% of your balance\n💰 Remaining: ${formatNum(totalBalance - amount)}\n\n${canAfford ? (impactPct > 50 ? "You can technically afford it, but it would use over half your balance. Consider saving more first." : "Yes! This purchase is within your means.") : "This would exceed your current balance. Consider saving up first or adjusting your budget."}`,
+      text: `${canAfford ? 'Yes' : 'Warning'}: **Can you afford ${formatNum(amount)}?**\n\nCurrent Balance: ${formatNum(totalBalance)}\nPurchase Amount: ${formatNum(amount)}\nImpact: ${impactPct}% of your balance\nRemaining: ${formatNum(totalBalance - amount)}\n\n${canAfford ? (impactPct > 50 ? "You can technically afford it, but it would use over half your balance. Consider saving more first." : "Yes! This purchase is within your means.") : "This would exceed your current balance. Consider saving up first or adjusting your budget."}`,
       type: 'analysis',
     };
   }
@@ -366,11 +366,11 @@ export function generateAdvisorResponse(question, financialData) {
     const goalAnalysis = (goalsProgress || []).map(g => {
       const forecast = forecastGoal(g, monthlySavings);
       const pct = g.target_amount > 0 ? Math.round(g.current_amount / g.target_amount * 100) : 0;
-      return `${g.icon} **${g.title}** — ${pct}% complete\n   ${forecast ? `Est. completion: ${forecast.projectedDate} (${forecast.monthsLeft} months)` : 'Need more savings data'}${forecast?.onTrack === false ? ' ⚠️ Behind schedule' : ''}`;
+      return `${g.icon} **${g.title}** - ${pct}% complete\n   ${forecast ? `Est. completion: ${forecast.projectedDate} (${forecast.monthsLeft} months)` : 'Need more savings data'}${forecast?.onTrack === false ? ' - Behind schedule' : ''}`;
     }).join('\n\n');
 
     return {
-      text: `🎯 **Goals Forecast** (based on ${formatNum(monthlySavings)}/mo savings):\n\n${goalAnalysis || 'No goals set yet. Create some goals to get forecasts!'}\n\n${monthlySavings === 0 ? "⚠️ You're not saving this month. Adjust your budget to make progress on goals." : ""}`,
+      text: `**Goals Forecast** (based on ${formatNum(monthlySavings)}/mo savings):\n\n${goalAnalysis || 'No goals set yet. Create some goals to get forecasts!'}\n\n${monthlySavings === 0 ? "Warning: You're not saving this month. Adjust your budget to make progress on goals." : ""}`,
       type: 'forecast',
     };
   }
@@ -382,30 +382,30 @@ export function generateAdvisorResponse(question, financialData) {
     const wantsPct = expensesByCategory.find(c => c.category === 'wants')?.total || 0;
 
     if (totalExpenses > 0 && wantsPct / totalExpenses > 0.3) {
-      tips.push("🎯 **50/30/20 Rule**: Your 'wants' spending is above 30% of expenses. Try the 50/30/20 split: 50% needs, 30% wants, 20% savings.");
+      tips.push("**50/30/20 Rule**: Your 'wants' spending is above 30% of expenses. Try the 50/30/20 split: 50% needs, 30% wants, 20% savings.");
     }
     if (savingsRate < 20) {
-      tips.push(`📈 **Boost Savings**: Your savings rate is ${savingsRate}%. Aim for 20%. That's an extra ${formatNum(totalIncome * 0.2 - balance)} per month.`);
+      tips.push(`**Boost Savings**: Your savings rate is ${savingsRate}%. Aim for 20%. That's an extra ${formatNum(totalIncome * 0.2 - balance)} per month.`);
     }
     if (recentExpenses.some(e => e.subcategory === 'dining')) {
-      tips.push("🍽️ **Reduce Dining Out**: Cooking at home can save 50-70% on food expenses. Try meal prepping on weekends.");
+      tips.push("**Reduce Dining Out**: Cooking at home can save 50-70% on food expenses. Try meal prepping on weekends.");
     }
     if (recentExpenses.some(e => e.subcategory === 'subscriptions')) {
-      tips.push("📱 **Audit Subscriptions**: Review your subscriptions. Cancel ones you haven't used in the past month.");
+      tips.push("**Audit Subscriptions**: Review your subscriptions. Cancel ones you haven't used in the past month.");
     }
-    tips.push("💡 **Automate Savings**: Set up automatic transfers to your savings account on payday before you spend.");
-    tips.push("🎯 **Emergency Fund**: Aim for 3-6 months of expenses as an emergency fund.");
+    tips.push("**Automate Savings**: Set up automatic transfers to your savings account on payday before you spend.");
+    tips.push("**Emergency Fund**: Aim for 3-6 months of expenses as an emergency fund.");
 
     const selected = tips.slice(0, 3);
     return {
-      text: `💡 **Personalized Tips:**\n\n${selected.join('\n\n')}`,
+      text: `**Personalized Tips:**\n\n${selected.join('\n\n')}`,
       type: 'tip',
     };
   }
 
   // Fallback
   return {
-    text: `I'm not sure about that, but I can help with:\n\n• 📊 "How am I doing?" — financial health check\n• 💰 "Where am I spending the most?" — breakdown\n• 🛒 "Can I afford [amount]?" — purchase analysis\n• 🎯 "How long until my goals?" — forecasting\n• 💡 "Give me tips" — personalized advice\n\nTry asking one of these!`,
+    text: `I'm not sure about that, but I can help with:\n\n- "How am I doing?" - financial health check\n- "Where am I spending the most?" - breakdown\n- "Can I afford [amount]?" - purchase analysis\n- "How long until my goals?" - forecasting\n- "Give me tips" - personalized advice\n\nTry asking one of these!`,
     type: 'help',
   };
 }

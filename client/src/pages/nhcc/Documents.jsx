@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Download, AlertTriangle, X } from 'lucide-react';
+import { FileText, Plus, Download, AlertTriangle, X, Upload, FileUp } from 'lucide-react';
 import { useState } from 'react';
 import { documentsApi } from '../../lib/api';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -19,10 +19,26 @@ export default function Documents() {
   const { formatDate } = useSettings();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ title: '', type: 'report', expiry_date: '' });
   const { data: docs = [], isLoading } = useQuery({ queryKey: ['documents'], queryFn: () => documentsApi.list() });
   const createMutation = useMutation({ mutationFn: d => documentsApi.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['documents'] }); setShowForm(false); } });
   const deleteMutation = useMutation({ mutationFn: id => documentsApi.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents'] }) });
+
+  const handleFileUpload = async (files) => {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        await documentsApi.upload(file);
+      }
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const isExpiringSoon = (date) => { if (!date) return false; const d = new Date(date); const now = new Date(); const diff = (d - now) / (1000 * 60 * 60 * 24); return diff >= 0 && diff <= 30; };
 
@@ -33,6 +49,19 @@ export default function Documents() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div><h1 className="text-2xl font-bold text-slate-800 dark:text-white">Documents</h1><p className="text-slate-500 dark:text-slate-400 mt-1">{docs.length} documents</p></div>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2.5 bg-nhcc-blue-500 hover:bg-nhcc-blue-600 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all"><Plus className="w-4 h-4" /> Add Document</button>
+      </div>
+
+      <div
+        onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-blue-400'); }}
+        onDragLeave={e => { e.currentTarget.classList.remove('ring-2', 'ring-blue-400'); }}
+        onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('ring-2', 'ring-blue-400'); handleFileUpload(e.dataTransfer.files); }}
+        className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 text-center transition-all hover:border-blue-400 cursor-pointer"
+        onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.multiple = true; input.onchange = e => handleFileUpload(e.target.files); input.click(); }}
+      >
+        <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {uploading ? 'Uploading...' : 'Drag and drop files here, or click to browse'}
+        </p>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">

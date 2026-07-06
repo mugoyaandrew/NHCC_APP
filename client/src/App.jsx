@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { SocketProvider } from './contexts/SocketContext';
 import VoiceNavigator from './components/ai/VoiceNavigator';
 import AIAdvisor from './components/ai/AIAdvisor';
+import ConnectionStatus from './components/ConnectionStatus';
 import NHCCLayout from './layouts/NHCCLayout';
 import FinaraLayout from './layouts/FinaraLayout';
 import Login from './pages/Login';
@@ -10,6 +12,7 @@ import Login from './pages/Login';
 // NHCC Pages
 import NHCCDashboard from './pages/nhcc/Dashboard';
 import Projects from './pages/nhcc/Projects';
+import ProjectDetail from './pages/nhcc/ProjectDetail';
 import Tasks from './pages/nhcc/Tasks';
 import Documents from './pages/nhcc/Documents';
 import Messages from './pages/nhcc/Messages';
@@ -19,6 +22,8 @@ import Approvals from './pages/nhcc/Approvals';
 import SiteReports from './pages/nhcc/SiteReports';
 import Reports from './pages/nhcc/Reports';
 import UserManagement from './pages/nhcc/UserManagement';
+import AuditLogs from './pages/nhcc/AuditLogs';
+import AdminSettings from './pages/nhcc/AdminSettings';
 
 // Finara Pages
 import FinaraDashboard from './pages/finara/Dashboard';
@@ -54,6 +59,7 @@ export default function App() {
 
   return (
     <>
+    <SocketProvider>
     <Routes>
       {/* Auth */}
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
@@ -61,6 +67,7 @@ export default function App() {
       {/* NHCC Portal Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><NHCCLayout><NHCCDashboard /></NHCCLayout></ProtectedRoute>} />
       <Route path="/projects" element={<ProtectedRoute><NHCCLayout><Projects /></NHCCLayout></ProtectedRoute>} />
+      <Route path="/projects/:id" element={<ProtectedRoute><NHCCLayout><ProjectDetail /></NHCCLayout></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><NHCCLayout><Tasks /></NHCCLayout></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><NHCCLayout><Documents /></NHCCLayout></ProtectedRoute>} />
       <Route path="/messages" element={<ProtectedRoute><NHCCLayout><Messages /></NHCCLayout></ProtectedRoute>} />
@@ -70,6 +77,8 @@ export default function App() {
       <Route path="/site-reports" element={<ProtectedRoute><NHCCLayout><SiteReports /></NHCCLayout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><NHCCLayout><Reports /></NHCCLayout></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><NHCCLayout><UserManagement /></NHCCLayout></ProtectedRoute>} />
+      <Route path="/audit" element={<ProtectedRoute><NHCCLayout><AuditLogs /></NHCCLayout></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><NHCCLayout><AdminSettings /></NHCCLayout></ProtectedRoute>} />
 
       {/* Finara Routes */}
       <Route path="/finara/dashboard" element={<ProtectedRoute><FinaraLayout><FinaraDashboard /></FinaraLayout></ProtectedRoute>} />
@@ -93,6 +102,7 @@ export default function App() {
         </div>
       } />
     </Routes>
+    </SocketProvider>
 
     {/* Global AI Overlays — only show when logged in */}
     {user && (
@@ -101,6 +111,7 @@ export default function App() {
         <AIAdvisor isOpen={advisorOpen} onClose={() => setAdvisorOpen(false)} />
       </>
     )}
+    <ConnectionStatus />
     </>
   );
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FolderKanban, Plus, MapPin, Calendar, X } from 'lucide-react';
+import { FolderKanban, Plus, MapPin, Calendar, X, Eye } from 'lucide-react';
 import { projectsApi } from '../../lib/api';
 import { useSettings } from '../../contexts/SettingsContext';
 
@@ -89,7 +90,12 @@ export default function Projects() {
               <div className="flex items-center gap-1 text-xs text-slate-400">
                 <Calendar className="w-3 h-3" /> {formatDate(project.start_date)}
               </div>
-              <button onClick={() => deleteMutation.mutate(project.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Delete</button>
+              <div className="flex items-center gap-3">
+                <Link to={`/projects/${project.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-nhcc-blue-500 hover:text-nhcc-blue-700 transition-colors">
+                  <Eye className="w-3 h-3" /> View
+                </Link>
+                <button onClick={() => deleteMutation.mutate(project.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Delete</button>
+              </div>
             </div>
           </motion.div>
         ))}

@@ -32,7 +32,7 @@ async function request(endpoint, options = {}) {
 
 export const api = {
   get: (endpoint) => request(endpoint),
-  post: (endpoint, body) => request(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  post: (endpoint, body) => request(endpoint, { method: 'POST', body: JSON.stringify(body), headers: { 'Idempotency-Key': crypto.randomUUID() } }),
   put: (endpoint, body) => request(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (endpoint) => request(endpoint, { method: 'DELETE' }),
 };
@@ -82,6 +82,7 @@ export const investmentsApi = {
 
 export const projectsApi = {
   list: (filters) => api.get('/projects' + buildQuery(filters)),
+  get: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects', data),
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
@@ -99,11 +100,23 @@ export const documentsApi = {
   create: (data) => api.post('/documents', data),
   update: (id, data) => api.put(`/documents/${id}`, data),
   delete: (id) => api.delete(`/documents/${id}`),
+  upload: (file, projectId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (projectId) formData.append('project_id', projectId);
+    const token = localStorage.getItem('token');
+    return fetch('/api/uploads', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    }).then(r => r.json());
+  },
 };
 
 export const approvalsApi = {
   list: (filters) => api.get('/approvals' + buildQuery(filters)),
   create: (data) => api.post('/approvals', data),
+  review: (id, data) => api.post(`/approvals/${id}/review`, data),
   update: (id, data) => api.put(`/approvals/${id}`, data),
   delete: (id) => api.delete(`/approvals/${id}`),
 };
@@ -135,6 +148,19 @@ export const usersApi = {
   delete: (id) => api.delete(`/users/${id}`),
   dashboardStats: () => api.get('/users/stats/dashboard'),
   finaraStats: () => api.get('/users/stats/finara'),
+};
+
+export const auditApi = {
+  list: (limit = 100) => api.get(`/audit?limit=${limit}`),
+};
+
+export const seedApi = {
+  generate: () => api.post('/seed/synthetic', {}),
+  purge: () => api.delete('/seed/synthetic'),
+};
+
+export const reportsApi = {
+  generateCeo: () => api.post('/reports/ceo', {}),
 };
 
 function buildQuery(filters) {

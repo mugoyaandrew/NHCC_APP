@@ -14,8 +14,20 @@ router.get('/', async (req, res) => {
     const logs = await prisma.auditLog.findMany({
       orderBy: { id: 'desc' },
       take: Math.min(Number(req.query.limit) || 100, 500),
+      include: {
+        user: { select: { email: true } }
+      }
     });
-    res.json(toApiShape(logs));
+    
+    // Map Prisma schema fields to match what AuditLogs.jsx expects
+    const mappedLogs = logs.map(log => ({
+      ...log,
+      operation: log.action, // mapping 'action' to 'operation'
+      model: log.tableName, // mapping 'tableName' to 'model'
+      user_email: log.user?.email || null,
+    }));
+
+    res.json(toApiShape(mappedLogs));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

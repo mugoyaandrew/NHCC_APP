@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./server
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=nhcc-enterprise-jwt-secret-2026
+      - DATABASE_URL=file:./db/nhcc.db
+      - PORT=3001
+    volumes:
+      - db-data:/app/db
+      - uploads:/app/uploads
+    restart: unless-stopped
+
+  frontend:
+    build: ./client
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  ml-service:
+    build: ./ml-service
+    ports:
+      - '8000:8000'
+    environment:
+      - NHCC_API_URL=http://backend:3001
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads:
