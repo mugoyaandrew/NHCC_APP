@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { usersApi } from '../../lib/api';
+import { reportsApi, usersApi } from '../../lib/api';
 import { useSettings } from '../../contexts/SettingsContext';
 
 const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6'];
@@ -9,7 +11,16 @@ const RAG_COLORS = { green: '#22c55e', amber: '#f59e0b', red: '#ef4444' };
 
 export default function Reports() {
   const { formatCurrency } = useSettings();
+  const [generatedReport, setGeneratedReport] = useState(null);
   const { data: stats, isLoading } = useQuery({ queryKey: ['dashboard-stats'], queryFn: usersApi.dashboardStats });
+  const reportMutation = useMutation({
+    mutationFn: reportsApi.generateCeo,
+    onSuccess: data => {
+      if (generatedReport?.reportUrl) URL.revokeObjectURL(generatedReport.reportUrl);
+      const reportUrl = URL.createObjectURL(new Blob([data.html], { type: 'text/html' }));
+      setGeneratedReport({ ...data, reportUrl });
+    },
+  });
 
   if (isLoading) return <div className="flex items-center justify-center h-96"><div className="spinner" /></div>;
 
@@ -19,7 +30,38 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-bold text-slate-800 dark:text-white">Reports & Analytics</h1><p className="text-slate-500 mt-1">Comprehensive overview</p></div>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Reports & Analytics</h1>
+          <p className="text-slate-500 mt-1">Comprehensive overview</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {generatedReport?.reportUrl && (
+            <a
+              href={generatedReport.reportUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              <Download className="w-4 h-4" /> Open CEO Report
+            </a>
+          )}
+          <button
+            onClick={() => reportMutation.mutate()}
+            disabled={reportMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2.5 bg-nhcc-blue-500 hover:bg-nhcc-blue-600 disabled:opacity-60 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all"
+          >
+            <Download className="w-4 h-4" />
+            {reportMutation.isPending ? 'Generating...' : 'Generate CEO Report'}
+          </button>
+        </div>
+      </div>
+
+      {reportMutation.error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm">
+          {reportMutation.error.message}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Projects by Location */}

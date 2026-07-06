@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FolderKanban, CheckSquare, MessageSquare,
   FileText, Calendar, Megaphone, ShieldCheck, HardHat, BarChart3,
-  Users, ChevronLeft, ChevronRight, LogOut, Moon, Sun,
+  Users, ClipboardList, ChevronLeft, ChevronRight, LogOut, Moon, Sun,
   ArrowLeftRight, Building2, Menu, X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,8 +20,9 @@ const navItems = [
   { label: 'Announcements', icon: Megaphone, path: '/announcements' },
   { label: 'Approvals', icon: ShieldCheck, path: '/approvals' },
   { label: 'Site Reports', icon: HardHat, path: '/site-reports' },
-  { label: 'Reports', icon: BarChart3, path: '/reports' },
-  { label: 'User Management', icon: Users, path: '/users' },
+  { label: 'Reports', icon: BarChart3, path: '/reports', roles: ['CEO', 'FINANCE', 'ICT'] },
+  { label: 'User Management', icon: Users, path: '/users', roles: ['CEO', 'HR', 'ICT'] },
+  { label: 'Audit Logs', icon: ClipboardList, path: '/audit', roles: ['CEO', 'ICT'] },
 ];
 
 export default function NHCCLayout({ children }) {
@@ -30,6 +31,7 @@ export default function NHCCLayout({ children }) {
   const { user, logout } = useAuth();
   const { darkMode, toggleDarkMode, setActiveApp } = useSettings();
   const navigate = useNavigate();
+  const visibleNavItems = navItems.filter(item => !item.roles || item.roles.includes(user?.role));
 
   const handleSwitchApp = () => {
     setActiveApp('finara');
@@ -80,7 +82,7 @@ export default function NHCCLayout({ children }) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-          {navItems.map(item => (
+          {visibleNavItems.map(item => (
             <NavLink
               key={item.path}
               to={item.path}

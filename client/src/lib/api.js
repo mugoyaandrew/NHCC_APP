@@ -82,6 +82,7 @@ export const investmentsApi = {
 
 export const projectsApi = {
   list: (filters) => api.get('/projects' + buildQuery(filters)),
+  get: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects', data),
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
@@ -104,6 +105,7 @@ export const documentsApi = {
 export const approvalsApi = {
   list: (filters) => api.get('/approvals' + buildQuery(filters)),
   create: (data) => api.post('/approvals', data),
+  review: (id, data) => api.post(`/approvals/${id}/review`, data),
   update: (id, data) => api.put(`/approvals/${id}`, data),
   delete: (id) => api.delete(`/approvals/${id}`),
 };
@@ -135,6 +137,14 @@ export const usersApi = {
   delete: (id) => api.delete(`/users/${id}`),
   dashboardStats: () => api.get('/users/stats/dashboard'),
   finaraStats: () => api.get('/users/stats/finara'),
+};
+
+export const auditApi = {
+  list: (limit = 100) => api.get(`/audit?limit=${limit}`),
+};
+
+export const reportsApi = {
+  generateCeo: () => api.post('/reports/ceo', {}),
 };
 
 function buildQuery(filters) {

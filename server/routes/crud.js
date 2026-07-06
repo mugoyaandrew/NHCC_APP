@@ -1,5 +1,6 @@
 const express = require('express');
 const { getDb, saveDb } = require('../db/init');
+const { writeAuditLog, requireRoles } = require('../lib/audit');
 
 /**
  * sql.js helper: converts db.exec() result into array of objects
@@ -14,12 +15,62 @@ function execToObjects(result) {
   });
 }
 
+function roleGate(roles) {
+  return roles && roles.length ? requireRoles(...roles) : (req, res, next) => next();
+}
+
+function enrichRows(db, rows, tableName, userScoped) {
+  if (userScoped) return rows;
+
+  for (const row of rows) {
+    if (row.manager_id || row.assignee_id || row.uploaded_by || row.requested_by || row.reported_by || row.author_id || row.sender_id || row.recipient_id || row.reviewed_by || row.project_id) {
+      if (row.project_id && tableName !== 'projects') {
+        const pr = db.exec('SELECT name FROM projects WHERE id = ?', [row.project_id]);
+        row.project_name = pr.length > 0 ? pr[0].values[0][0] : null;
+      }
+
+      const nameFields = {
+        assignee_id: 'assignee_name',
+        uploaded_by: 'uploader_name',
+        requested_by: 'requester_name',
+        reviewed_by: 'reviewer_name',
+        reported_by: 'reporter_name',
+        author_id: 'author_name',
+        sender_id: 'sender_name',
+        recipient_id: 'recipient_name',
+        manager_id: 'manager_name',
+      };
+
+      for (const [idField, nameField] of Object.entries(nameFields)) {
+        if (row[idField]) {
+          const u = db.exec('SELECT full_name FROM users WHERE id = ?', [row[idField]]);
+          row[nameField] = u.length > 0 ? u[0].values[0][0] : null;
+        }
+      }
+    }
+  }
+
+  return rows;
+}
+
 function createCrudRouter(tableName, options = {}) {
   const router = express.Router();
-  const { userScoped = false, allowedFilters = [] } = options;
+  const {
+    userScoped = false,
+    allowedFilters = [],
+    readRoles = null,
+    writeRoles = null,
+    createRoles = writeRoles,
+    updateRoles = writeRoles,
+    deleteRoles = writeRoles,
+  } = options;
+  const canRead = roleGate(readRoles);
+  const canCreate = roleGate(createRoles);
+  const canUpdate = roleGate(updateRoles);
+  const canDelete = roleGate(deleteRoles);
 
   // LIST
-  router.get('/', async (req, res) => {
+  router.get('/', canRead, async (req, res) => {
     try {
       const db = await getDb();
       let sql = `SELECT * FROM ${tableName}`;
@@ -51,36 +102,37 @@ function createCrudRouter(tableName, options = {}) {
       }
       stmt.free();
 
-      // Enrich with user names for NHCC entities
-      if (!userScoped) {
-        for (const row of rows) {
-          if (row.manager_id || row.assignee_id || row.uploaded_by || row.requested_by || row.reported_by || row.author_id || row.sender_id || row.recipient_id) {
-            // Get project name for tasks
-            if (row.project_id && tableName !== 'projects') {
-              const pr = db.exec('SELECT name FROM projects WHERE id = ?', [row.project_id]);
-              row.project_name = pr.length > 0 ? pr[0].values[0][0] : null;
-            }
-            // Get user names
-            const nameFields = { assignee_id: 'assignee_name', uploaded_by: 'uploader_name', requested_by: 'requester_name', reviewed_by: 'reviewer_name', reported_by: 'reporter_name', author_id: 'author_name', sender_id: 'sender_name', recipient_id: 'recipient_name', manager_id: 'manager_name' };
-            for (const [idField, nameField] of Object.entries(nameFields)) {
-              if (row[idField]) {
-                const u = db.exec('SELECT full_name FROM users WHERE id = ?', [row[idField]]);
-                row[nameField] = u.length > 0 ? u[0].values[0][0] : null;
-              }
-            }
-          }
-        }
-      }
-
-      res.json(rows);
+      res.json(enrichRows(db, rows, tableName, userScoped));
     } catch (err) {
       console.error(`GET /${tableName} error:`, err);
       res.status(500).json({ error: err.message });
     }
   });
 
+  // READ
+  router.get('/:id', canRead, async (req, res) => {
+    try {
+      const db = await getDb();
+      let sql = `SELECT * FROM ${tableName} WHERE id = ?`;
+      const params = [req.params.id];
+
+      if (userScoped) {
+        sql += ' AND user_id = ?';
+        params.push(req.user.id);
+      }
+
+      const row = execToObjects(db.exec(sql, params))[0];
+      if (!row) return res.status(404).json({ error: 'Record not found' });
+
+      res.json(enrichRows(db, [row], tableName, userScoped)[0]);
+    } catch (err) {
+      console.error(`GET /${tableName}/:id error:`, err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // CREATE
-  router.post('/', async (req, res) => {
+  router.post('/', canCreate, async (req, res) => {
     try {
       const db = await getDb();
       const data = { ...req.body };
@@ -98,6 +150,12 @@ function createCrudRouter(tableName, options = {}) {
 
       const row = db.exec(`SELECT * FROM ${tableName} WHERE id = ?`, [id]);
       const created = execToObjects(row)[0];
+      await writeAuditLog(req, {
+        operation: 'CREATE',
+        model: tableName,
+        recordId: id,
+        newValues: created,
+      });
       res.status(201).json(created);
     } catch (err) {
       console.error(`POST /${tableName} error:`, err);
@@ -106,12 +164,18 @@ function createCrudRouter(tableName, options = {}) {
   });
 
   // UPDATE
-  router.put('/:id', async (req, res) => {
+  router.put('/:id', canUpdate, async (req, res) => {
     try {
       const db = await getDb();
       const data = { ...req.body };
       delete data.id;
       delete data.user_id;
+
+      const previousSql = userScoped
+        ? `SELECT * FROM ${tableName} WHERE id = ? AND user_id = ?`
+        : `SELECT * FROM ${tableName} WHERE id = ?`;
+      const previousParams = userScoped ? [req.params.id, req.user.id] : [req.params.id];
+      const previous = execToObjects(db.exec(previousSql, previousParams))[0] || null;
 
       const sets = Object.keys(data).map(k => `${k} = ?`).join(', ');
       const vals = [...Object.values(data), req.params.id];
@@ -127,6 +191,15 @@ function createCrudRouter(tableName, options = {}) {
 
       const row = db.exec(`SELECT * FROM ${tableName} WHERE id = ?`, [req.params.id]);
       const updated = execToObjects(row)[0];
+      if (previous && updated) {
+        await writeAuditLog(req, {
+          operation: 'UPDATE',
+          model: tableName,
+          recordId: req.params.id,
+          previousValues: previous,
+          newValues: updated,
+        });
+      }
       res.json(updated || { id: req.params.id });
     } catch (err) {
       console.error(`PUT /${tableName}/:id error:`, err);
@@ -135,17 +208,30 @@ function createCrudRouter(tableName, options = {}) {
   });
 
   // DELETE
-  router.delete('/:id', async (req, res) => {
+  router.delete('/:id', canDelete, async (req, res) => {
     try {
       const db = await getDb();
       let sql = `DELETE FROM ${tableName} WHERE id = ?`;
       const params = [req.params.id];
+      const previousSql = userScoped
+        ? `SELECT * FROM ${tableName} WHERE id = ? AND user_id = ?`
+        : `SELECT * FROM ${tableName} WHERE id = ?`;
+      const previousParams = userScoped ? [req.params.id, req.user.id] : [req.params.id];
+      const previous = execToObjects(db.exec(previousSql, previousParams))[0] || null;
       if (userScoped) {
         sql += ' AND user_id = ?';
         params.push(req.user.id);
       }
       db.run(sql, params);
       saveDb();
+      if (previous) {
+        await writeAuditLog(req, {
+          operation: 'DELETE',
+          model: tableName,
+          recordId: req.params.id,
+          previousValues: previous,
+        });
+      }
       res.json({ success: true });
     } catch (err) {
       console.error(`DELETE /${tableName}/:id error:`, err);
