@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internship Logbook - NHCC Enterprise App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        h1 {
+            color: #1e40af;
+            border-bottom: 2px solid #1e40af;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            color: #0f172a;
+            margin-top: 30px;
+            background-color: #f8fafc;
+            padding: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+        .section-header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .log-entry {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #cbd5e1;
+        }
+        .date-badge {
+            display: inline-block;
+            background-color: #e2e8f0;
+            color: #475569;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        .task-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .task-list li {
+            margin-bottom: 8px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Software Engineering Internship Logbook</h1>
+    <p style="text-align: center; font-size: 1.1em; color: #64748b;">Project: NHCC Enterprise Application Development</p>
+    <p style="text-align: center; font-style: italic; margin-bottom: 40px;">Developer: Andrew Mugoya</p>
+
+    <!-- PART 1: ORIGINAL APP -->
+    <div class="section-header">
+        <h2 style="color: white; border: none; margin: 0; background: transparent;">Part 1: Developing the Original Base App (Finara Framework)</h2>
+        <p style="margin: 5px 0 0 0; font-size: 0.9em;">Initial personal finance tracking interface and frontend architecture</p>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 1: Environment Setup & UI Architecture</div>
+        <ul class="task-list">
+            <li>Today I set up the initial React project repository using Vite for fast bundling and development.</li>
+            <li>I configured Tailwind CSS for the project to ensure rapid, responsive UI styling without writing custom CSS files.</li>
+            <li>Today I designed the primary layout shell, including the sidebar navigation and top header components.</li>
+            <li>I implemented the initial routing structure using React Router to navigate between the Dashboard, Income, and Expenses pages.</li>
+        </ul>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 2: Core Tracking Features</div>
+        <ul class="task-list">
+            <li>Today I built the Income and Expenses components, creating the forms to allow users to input financial records.</li>
+            <li>I implemented state management using React Context to ensure data flows smoothly between the different pages.</li>
+            <li>Today I created the interactive data tables with sorting and filtering capabilities for easy viewing of transaction histories.</li>
+            <li>I wrote logic to calculate total balances dynamically based on the inputted income and expense arrays.</li>
+        </ul>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 3: Analytics & Goals Module</div>
+        <ul class="task-list">
+            <li>Today I integrated a charting library to visualize spending patterns, rendering dynamic pie charts and bar graphs.</li>
+            <li>I built the Financial Goals tracking module, allowing users to set target amounts and deadlines.</li>
+            <li>Today I wrote mathematical helper functions to calculate the percentage completion of goals based on current savings.</li>
+            <li>I designed the dashboard widgets to display high-level summaries of the user's financial health at a glance.</li>
+        </ul>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 4: Frontend Polish & Optimization</div>
+        <ul class="task-list">
+            <li>Today I implemented dark mode support across the entire application using Tailwind's dark variant class strategy.</li>
+            <li>I refined the user experience by adding Framer Motion animations to page transitions and modal popups.</li>
+            <li>Today I conducted responsive design testing, ensuring the app looks perfect on both mobile and desktop screens.</li>
+            <li>I finalized the base UI components, preparing the architecture for the enterprise backend integration.</li>
+        </ul>
+    </div>
+
+    <!-- PART 2: IMPROVEMENTS MADE -->
+    <div class="section-header" style="background-color: #0f766e;">
+        <h2 style="color: white; border: none; margin: 0; background: transparent;">Part 2: NHCC Enterprise Improvements & Backend Integration</h2>
+        <p style="margin: 5px 0 0 0; font-size: 0.9em;">Migrating to a robust backend, real-time sync, and AI features</p>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 5: Backend API & Prisma Database Migration</div>
+        <ul class="task-list">
+            <li>Today I migrated the application's data layer from client-side storage to a robust SQLite database.</li>
+            <li>I configured Prisma ORM, defining complex data models for Projects, Tasks, Site Reports, and Document management.</li>
+            <li>Today I developed the core Node.js and Express backend API, creating scalable routing for all enterprise CRUD operations.</li>
+            <li>I implemented dynamic API controllers that automatically map incoming JSON data to the correct Prisma models.</li>
+        </ul>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 6: Security, Authentication & Real-time Comm</div>
+        <ul class="task-list">
+            <li>Today I built a secure authentication system using JSON Web Tokens (JWT) and bcrypt password hashing.</li>
+            <li>I implemented Role-Based Access Control (RBAC) middleware to restrict sensitive routes to authorized personnel only.</li>
+            <li>Today I integrated Socket.io into both the Node server and the React client to enable real-time, bi-directional communication.</li>
+            <li>I wrote logic to instantly invalidate frontend data caches whenever another user modifies a project, ensuring live synchronization.</li>
+        </ul>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 7: Enterprise Frontend & DevOps Containerization</div>
+        <ul class="task-list">
+            <li>Today I expanded the frontend to include complex enterprise interfaces: Project Portfolios, Task Kanban boards, and Site Reports.</li>
+            <li>I integrated TanStack React Query to efficiently handle data fetching, caching, and background synchronization with the new API.</li>
+            <li>Today I containerized the entire application stack by writing a comprehensive Dockerfile and docker-compose.yml configuration.</li>
+            <li>I set up multi-container networking to ensure the Vite frontend and Node backend communicate securely within the Docker environment.</li>
+        </ul>
+    </div>
+
+    <div class="log-entry">
+        <div class="date-badge">Week 8: Machine Learning Engine & Audit Logging</div>
+        <ul class="task-list">
+            <li>Today I built a custom Machine Learning integration in the backend to provide predictive budget forecasting.</li>
+            <li>I implemented a heuristic Risk Classification engine that automatically evaluates project parameters to assign Red/Amber/Green statuses.</li>
+            <li>Today I developed the automated Audit Logging system to track every modification made to the database for compliance and accountability.</li>
+            <li>I conducted the final integration tests, optimizing the API response times and finalizing the NHCC Enterprise handover documentation.</li>
+        </ul>
+    </div>
+
+</body>
+</html>

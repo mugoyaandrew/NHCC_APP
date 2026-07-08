@@ -33,8 +33,8 @@ function getIo() {
 
 function broadcastCrudEvent(resource, action, payload, user) {
   if (!ioInstance) return;
-  const event = `${resource}:${action}`;
-  ioInstance.emit(event, { resource, action, payload, actor: user?.id || null, timestamp: new Date().toISOString() });
+  const event = `entity:${action}`;
+  ioInstance.emit(event, { table: resource, action, payload, actor: user?.id || null, timestamp: new Date().toISOString() });
 }
 
 function broadcastFileShared(document, user) {

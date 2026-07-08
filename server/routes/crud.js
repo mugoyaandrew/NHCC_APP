@@ -98,6 +98,25 @@ async function enrichRows(rows, tableName) {
   return output;
 }
 
+function applyRbacFilter(tableName, user, where) {
+  if (['ICT', 'CEO', 'DEPUTY_CEO'].includes(user.role)) return where;
+  
+  if (user.role === 'PROJECT_IMPLEMENTER') {
+    if (tableName === 'projects') {
+      where.OR = [{ managerId: user.id }, { tasks: { some: { assigneeId: user.id } } }];
+    } else if (tableName === 'tasks') {
+      where.assigneeId = user.id;
+    } else if (tableName === 'documents') {
+      where.uploadedBy = user.id;
+    } else if (tableName === 'approvals') {
+      where.requestedBy = user.id;
+    } else if (tableName === 'site_reports') {
+      where.reportedBy = user.id;
+    }
+  }
+  return where;
+}
+
 function createCrudRouter(tableName, options = {}) {
   const router = express.Router();
   const { userScoped = false, allowedFilters = [] } = options;
@@ -106,7 +125,7 @@ function createCrudRouter(tableName, options = {}) {
 
   router.get('/', async (req, res) => {
     try {
-      const where = {};
+      let where = {};
       if (userScoped) where.userId = req.user.id;
 
       for (const filter of allowedFilters) {
@@ -118,11 +137,37 @@ function createCrudRouter(tableName, options = {}) {
         }
       }
 
+      if (!userScoped) where = applyRbacFilter(tableName, req.user, where);
+
       let rows = await delegate.findMany({ where, orderBy: { id: 'desc' } });
       if (!userScoped) rows = await enrichRows(rows, tableName);
       res.json(toApiShape(rows));
     } catch (err) {
       console.error(`GET /${tableName} error:`, err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.get('/:id', async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID' });
+      
+      let where = { id };
+      if (userScoped) where.userId = req.user.id;
+      if (!userScoped) where = applyRbacFilter(tableName, req.user, where);
+
+      const item = await delegate.findUnique({ where });
+      if (!item) return res.status(404).json({ error: 'Not found' });
+      
+      let finalItem = item;
+      if (!userScoped) {
+        const enriched = await enrichRows([item], tableName);
+        finalItem = enriched[0];
+      }
+      res.json(toApiShape(finalItem));
+    } catch (err) {
+      console.error(`GET /${tableName}/:id error:`, err);
       res.status(500).json({ error: err.message });
     }
   });

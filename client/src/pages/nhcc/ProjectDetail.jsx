@@ -1,11 +1,12 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Calendar, CheckSquare, FileText, HardHat, MapPin,
-  User, WalletCards, Activity
+  User, WalletCards, Activity, BrainCircuit, TrendingUp, AlertTriangle
 } from 'lucide-react';
-import { documentsApi, projectsApi, siteReportsApi, tasksApi } from '../../lib/api';
+import { documentsApi, projectsApi, siteReportsApi, tasksApi, mlApi } from '../../lib/api';
 import { useSettings } from '../../contexts/SettingsContext';
 
 const statusColors = {
@@ -45,6 +46,8 @@ function EmptyState({ icon: Icon, label }) {
 export default function ProjectDetail() {
   const { id } = useParams();
   const { formatCurrency, formatDate } = useSettings();
+  const [mlData, setMlData] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const { data: project, isLoading } = useQuery({
     queryKey: ['project', id],
@@ -79,6 +82,39 @@ export default function ProjectDetail() {
   const spent = Number(project.spent) || 0;
   const budget = Number(project.budget) || 0;
   const budgetUsed = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+
+  const runAnalysis = async () => {
+    setAnalyzing(true);
+    try {
+      const budgetData = {
+        budget: budget,
+        spent: spent,
+        completion: completion,
+        months_elapsed: 6, // Mock for demo
+        planned_duration_months: 12
+      };
+      
+      const riskData = {
+        completion: completion,
+        budget_utilization: budget > 0 ? (spent / budget) * 100 : 0,
+        months_elapsed: 6,
+        planned_duration_months: 12,
+        open_tasks: tasks.filter(t => t.status !== 'completed').length,
+        blocked_tasks: tasks.filter(t => t.status === 'blocked').length
+      };
+
+      const [forecast, risk] = await Promise.all([
+        mlApi.forecastBudget(budgetData),
+        mlApi.classifyRisk(riskData)
+      ]);
+      setMlData({ forecast, risk });
+    } catch (err) {
+      console.error('ML Analysis failed', err);
+      alert('Failed to connect to ML Service. Check your network connection or server status.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -128,6 +164,75 @@ export default function ProjectDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* AI Financial Advisor Section */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-800 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-500/20 shadow-sm relative overflow-hidden">
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <div className="flex items-center gap-2">
+            <BrainCircuit className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white">AI Financial Advisor</h2>
+          </div>
+          <button
+            onClick={runAnalysis}
+            disabled={analyzing}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+          >
+            {analyzing ? 'Analyzing...' : 'Run ML Analysis'}
+          </button>
+        </div>
+
+        {mlData ? (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+            {/* Forecast Card */}
+            <div className="bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-indigo-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-3 font-semibold text-sm">
+                <TrendingUp className="w-4 h-4" /> Cost Forecast
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Projected Total Cost</span>
+                  <span className="font-bold text-slate-800 dark:text-white">{formatCurrency(mlData.forecast.projected_total_cost)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Projected Overrun</span>
+                  <span className={`font-bold ${mlData.forecast.projected_overrun > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                    {mlData.forecast.projected_overrun > 0 ? '+' : ''}{formatCurrency(mlData.forecast.projected_overrun)} ({mlData.forecast.overrun_percentage}%)
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-800 p-2 rounded mt-2">
+                  {mlData.forecast.recommendation}
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Card */}
+            <div className="bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-indigo-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-3 font-semibold text-sm">
+                <AlertTriangle className="w-4 h-4" /> Risk Classification
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Predicted RAG Status</span>
+                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase text-white ${ragColors[mlData.risk.predicted_rag] || 'bg-slate-500'}`}>
+                    {mlData.risk.predicted_rag}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">ML Confidence</span>
+                  <span className="font-bold text-slate-800 dark:text-white">{(mlData.risk.confidence * 100).toFixed(0)}%</span>
+                </div>
+                <ul className="text-xs text-slate-500 list-disc pl-4 space-y-1">
+                  {mlData.risk.risk_factors.map((rf, i) => <li key={i}>{rf}</li>)}
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-slate-400 relative z-10">
+            Click the button above to run a live scikit-learn projection on this project's spending and schedule data.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

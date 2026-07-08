@@ -50,6 +50,18 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/stats/dashboard', async (req, res) => {
   try {
+    let projectWhere = { status: { in: ['planning', 'in_progress'] } };
+    let taskWhere = {};
+    let approvalWhere = { status: 'pending' };
+    let docWhere = {};
+
+    if (req.user.role === 'PROJECT_IMPLEMENTER') {
+      projectWhere = { ...projectWhere, OR: [{ managerId: req.user.id }, { tasks: { some: { assigneeId: req.user.id } } }] };
+      taskWhere = { assigneeId: req.user.id };
+      docWhere = { uploadedBy: req.user.id };
+      approvalWhere = { ...approvalWhere, requestedBy: req.user.id };
+    }
+
     const [
       activeProjects,
       totalTasks,
@@ -62,16 +74,16 @@ router.get('/stats/dashboard', async (req, res) => {
       tasksByStatus,
       projectLocations,
     ] = await Promise.all([
-      prisma.project.count({ where: { status: { in: ['planning', 'in_progress'] } } }),
-      prisma.task.count(),
-      prisma.approval.count({ where: { status: 'pending' } }),
+      prisma.project.count({ where: projectWhere }),
+      prisma.task.count({ where: taskWhere }),
+      prisma.approval.count({ where: approvalWhere }),
       prisma.user.count({ where: { isActive: true } }),
-      prisma.document.count(),
-      prisma.message.count({ where: { isRead: false } }),
-      prisma.project.aggregate({ _sum: { budget: true, spent: true } }),
-      prisma.project.groupBy({ by: ['ragStatus'], _count: { _all: true } }),
-      prisma.task.groupBy({ by: ['status'], _count: { _all: true } }),
-      prisma.project.groupBy({ by: ['location'], _count: { _all: true }, _sum: { budget: true, spent: true } }),
+      prisma.document.count({ where: docWhere }),
+      prisma.message.count({ where: { isRead: false, recipientId: req.user.id } }),
+      prisma.project.aggregate({ _sum: { budget: true, spent: true }, where: projectWhere }),
+      prisma.project.groupBy({ by: ['ragStatus'], _count: { _all: true }, where: projectWhere }),
+      prisma.task.groupBy({ by: ['status'], _count: { _all: true }, where: taskWhere }),
+      prisma.project.groupBy({ by: ['location'], _count: { _all: true }, _sum: { budget: true, spent: true }, where: projectWhere }),
     ]);
 
     res.json({

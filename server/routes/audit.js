@@ -11,21 +11,31 @@ function canViewAudit(user) {
 router.get('/', async (req, res) => {
   try {
     if (!canViewAudit(req.user)) return res.status(403).json({ error: 'Audit logs require CEO or ICT access' });
+    
     const logs = await prisma.auditLog.findMany({
       orderBy: { id: 'desc' },
-      take: Math.min(Number(req.query.limit) || 100, 500),
-      include: {
-        user: { select: { email: true } }
-      }
+      take: Math.min(Number(req.query.limit) || 100, 500)
     });
     
-    // Map Prisma schema fields to match what AuditLogs.jsx expects
-    const mappedLogs = logs.map(log => ({
-      ...log,
-      operation: log.action, // mapping 'action' to 'operation'
-      model: log.tableName, // mapping 'tableName' to 'model'
-      user_email: log.user?.email || null,
-    }));
+    const userIds = [...new Set(logs.map(l => l.userId).filter(Boolean))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, email: true }
+    });
+    const userMap = users.reduce((acc, user) => ({ ...acc, [user.id]: user.email }), {});
+
+    const mappedLogs = logs.map(log => {
+      let parsedFields = [];
+      try {
+        if (log.changedFields) parsedFields = JSON.parse(log.changedFields);
+      } catch (e) {}
+      
+      return {
+        ...log,
+        changedFields: parsedFields,
+        user_email: log.userId ? (userMap[log.userId] || null) : null,
+      };
+    });
 
     res.json(toApiShape(mappedLogs));
   } catch (err) {

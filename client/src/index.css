@@ -80,13 +80,83 @@ body {
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Stat card gradient overlays */
+/* Stat card gradient overlays (Now with 3D effects) */
 .stat-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 .stat-green { background: linear-gradient(135deg, #22c55e, #15803d); }
 .stat-amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .stat-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .stat-purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
 .stat-teal { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+[class*="stat-"] {
+  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3), inset 0 2px 10px rgba(255,255,255,0.2) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+[class*="stat-"]::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+[class*="stat-"]:hover::before {
+  opacity: 1;
+}
+
+[class*="stat-"]:hover {
+  transform: translateY(-8px) scale(1.03) perspective(1000px) rotateX(4deg) rotateY(-4deg) !important;
+  box-shadow: -15px 20px 30px -5px rgba(0,0,0,0.4), inset 0 2px 15px rgba(255,255,255,0.4) !important;
+}
+
+/* Global 3D Neumorphism for ALL white/slate panels */
+div[class*="bg-white"][class*="rounded-2xl"][class*="shadow-sm"], 
+div[class*="bg-slate-800"][class*="rounded-2xl"][class*="shadow-sm"],
+div[class*="bg-slate-50"][class*="rounded-xl"] {
+  background: linear-gradient(145deg, rgba(255,255,255,1) 0%, rgba(248,250,252,1) 100%) !important;
+  box-shadow: 12px 12px 30px rgba(0, 0, 0, 0.04),
+             -12px -12px 30px rgba(255, 255, 255, 0.9),
+             inset 1px 1px 3px rgba(255, 255, 255, 1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark div[class*="bg-white"][class*="rounded-2xl"][class*="shadow-sm"], 
+.dark div[class*="bg-slate-800"][class*="rounded-2xl"][class*="shadow-sm"],
+.dark div[class*="bg-slate-700/50"][class*="rounded-xl"] {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+  box-shadow: 12px 12px 30px rgba(0, 0, 0, 0.5),
+             -8px -8px 25px rgba(255, 255, 255, 0.03),
+             inset 1px 1px 3px rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+div[class*="bg-white"][class*="rounded-2xl"][class*="shadow-sm"]:hover, 
+div[class*="bg-slate-800"][class*="rounded-2xl"][class*="shadow-sm"]:hover {
+  transform: perspective(1000px) translateZ(10px) translateY(-4px);
+  box-shadow: 18px 18px 40px rgba(0, 0, 0, 0.06),
+             -18px -18px 40px rgba(255, 255, 255, 1),
+             inset 1px 1px 3px rgba(255, 255, 255, 1) !important;
+}
+
+.dark div[class*="bg-white"][class*="rounded-2xl"][class*="shadow-sm"]:hover, 
+.dark div[class*="bg-slate-800"][class*="rounded-2xl"][class*="shadow-sm"]:hover {
+  box-shadow: 18px 18px 45px rgba(0, 0, 0, 0.7),
+             -8px -8px 30px rgba(255, 255, 255, 0.04),
+             inset 1px 1px 3px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 3D Sidebar floating effect */
+aside.bg-nhcc-gradient, aside.bg-finara-gradient {
+  box-shadow: 10px 0 30px rgba(0,0,0,0.3) !important;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
 
 /* RAG status colors */
 .rag-green { color: #22c55e; }

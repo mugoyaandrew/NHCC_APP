@@ -51,14 +51,14 @@ async function initializeDatabase() {
 
   // Seed users
   const users = [
-    ['admin@nhcc.go.ug', hash, 'James Mukasa', 'CEO', 'OPERATIONS'],
-    ['eng@nhcc.go.ug', hash, 'Sarah Nakamya', 'ENGINEERING', 'ENGINEERING'],
-    ['finance@nhcc.go.ug', hash, 'David Ochieng', 'FINANCE', 'FINANCE'],
-    ['hr@nhcc.go.ug', hash, 'Grace Auma', 'HR', 'HR'],
-    ['ict@nhcc.go.ug', hash, 'Peter Ssempala', 'ICT', 'ICT'],
-    ['procurement@nhcc.go.ug', hash, 'Mary Nalubega', 'PROCUREMENT', 'PROCUREMENT'],
-    ['ops@nhcc.go.ug', hash, 'John Kato', 'OPERATIONS', 'OPERATIONS'],
-    ['intern@nhcc.go.ug', hash, 'Rita Nambi', 'INTERN', 'ENGINEERING'],
+    ['admin@nhcc.go.ug', hash, 'Fred Mukisa', 'CEO', 'OPERATIONS'],
+    ['eng@nhcc.go.ug', hash, 'Jane Namubiru', 'CHIEF_ENGINEER', 'ENGINEERING'],
+    ['finance@nhcc.go.ug', hash, 'Michael Kintu', 'FINANCE', 'FINANCE'],
+    ['hr@nhcc.go.ug', hash, 'Alice Nabalamba', 'HR', 'HR'],
+    ['ict@nhcc.go.ug', hash, 'Paul Musinguzi', 'ICT', 'ICT'],
+    ['procurement@nhcc.go.ug', hash, 'Grace Kemigisha', 'PROCUREMENT', 'PROCUREMENT'],
+    ['ops@nhcc.go.ug', hash, 'Simon Ssekandi', 'PROJECT_IMPLEMENTER', 'OPERATIONS'],
+    ['intern@nhcc.go.ug', hash, 'Rose Atim', 'INTERN', 'ENGINEERING'],
     ['demo@finara.app', hash, 'Demo User', 'STAFF', 'OPERATIONS'],
   ];
   for (const u of users) {
@@ -148,7 +148,7 @@ async function initializeDatabase() {
 
   // Seed messages
   const msgs = [
-    [1, 2, 'Lubowa Progress Update', 'Sarah, please send me the latest progress report for Lubowa by end of week.', 1],
+    [1, 2, 'Lubowa Progress Update', 'Jane, please send me the latest progress report for Lubowa by end of week.', 1],
     [2, 1, 'Re: Lubowa Progress Update', 'Sure, I will compile the report by Friday. We are at 62% completion.', 0],
     [3, 1, 'Q2 Budget Review', 'The Q2 review shows we are 8% under budget on Temangalo. See attached report.', 0],
     [4, null, 'Leave Policy Update', 'Updated leave policy effective July 1st. Annual leave must be applied 2 weeks in advance.', 0],

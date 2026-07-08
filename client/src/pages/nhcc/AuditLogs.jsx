@@ -70,8 +70,7 @@ export default function AuditLogs() {
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                 <th className="text-left px-5 py-3 font-medium text-slate-500">Time</th>
-                <th className="text-left px-5 py-3 font-medium text-slate-500">User</th>
-                <th className="text-left px-5 py-3 font-medium text-slate-500">Action</th>
+                <th className="text-left px-5 py-3 font-medium text-slate-500">Action & User</th>
                 <th className="text-left px-5 py-3 font-medium text-slate-500">Entity</th>
                 <th className="text-left px-5 py-3 font-medium text-slate-500">Record</th>
                 <th className="text-left px-5 py-3 font-medium text-slate-500">Changed Fields</th>
@@ -87,10 +86,9 @@ export default function AuditLogs() {
                   className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
                 >
                   <td className="px-5 py-3 text-slate-500">{formatDate(log.created_at)}</td>
-                  <td className="px-5 py-3 text-slate-700 dark:text-slate-200">{log.user_email || 'System'}</td>
                   <td className="px-5 py-3">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${operationColors[log.operation] || 'bg-slate-100 text-slate-700'}`}>
-                      {log.operation}
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide ${operationColors[log.operation] || 'bg-slate-100 text-slate-700'}`}>
+                      {log.operation} BY {log.user_email?.split('@')[0].toUpperCase() || 'SYSTEM'}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-slate-700 dark:text-slate-200">{log.model}</td>

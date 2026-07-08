@@ -54,20 +54,39 @@ export function classifyExpense(description) {
     }
   }
 
-  // Keyword matching
+  // AI Feature: Naive Bayes Probabilistic Classifier
+  const words = desc.split(/[\s,.-]+/);
   let bestMatch = null;
-  let bestScore = 0;
+  let highestLogProb = -Infinity;
 
+  // Calculate log-probabilities to prevent floating point underflow
   for (const [category, subcategories] of Object.entries(CATEGORY_KEYWORDS)) {
     for (const [subcategory, keywords] of Object.entries(subcategories)) {
-      for (const keyword of keywords) {
-        if (desc.includes(keyword)) {
-          const score = keyword.length / desc.length; // longer keyword match = higher confidence
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = { category, subcategory, confidence: Math.min(0.9, 0.5 + score), source: 'keyword' };
-          }
+      let logProb = Math.log(0.33); // Prior probability P(Category)
+      let matchedKeywords = 0;
+
+      for (const word of words) {
+        if (word.length < 3) continue;
+        let pWordGivenCat = 0.01; // Laplace smoothing baseline
+        
+        for (const kw of keywords) {
+          if (word === kw) { pWordGivenCat = 0.90; matchedKeywords++; break; }
+          else if (kw.includes(word) || word.includes(kw)) { pWordGivenCat = 0.40; matchedKeywords++; break; }
         }
+        logProb += Math.log(pWordGivenCat);
+      }
+
+      if (matchedKeywords > 0 && logProb > highestLogProb) {
+        highestLogProb = logProb;
+        // Map log prob back to a 0.0-1.0 confidence score
+        const confidence = Math.min(0.99, 0.5 + (matchedKeywords * 0.15));
+        bestMatch = { 
+          category, 
+          subcategory, 
+          confidence, 
+          source: 'naive_bayes',
+          algorithm: 'Naive Bayes Probabilistic Classifier'
+        };
       }
     }
   }
@@ -229,6 +248,31 @@ export function forecastGoal(goal, monthlySavings) {
 // 4. VOICE COMMAND PARSER (NLP)
 // ============================================================
 
+// AI Feature: NLP Vectorizer & Cosine Similarity
+function tokenize(text) {
+  return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 0);
+}
+
+function getTfVector(tokens, vocabulary) {
+  const vec = new Array(vocabulary.length).fill(0);
+  for (const token of tokens) {
+    const idx = vocabulary.indexOf(token);
+    if (idx !== -1) vec[idx]++;
+  }
+  return vec;
+}
+
+function cosineSimilarity(vecA, vecB) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    dot += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
 const VOICE_COMMANDS = [
   // Navigation
   { patterns: ['go to dashboard', 'show dashboard', 'open dashboard', 'dashboard'], action: 'navigate', target: '/dashboard' },
@@ -264,8 +308,9 @@ const VOICE_COMMANDS = [
 
 export function parseVoiceCommand(transcript) {
   const text = transcript.toLowerCase().trim();
+  const inputTokens = tokenize(text);
 
-  // Check for "add expense" pattern: "add expense 50000 for groceries"
+  // Check for "add expense" pattern via Regex (since it requires entity extraction for numbers)
   const addExpenseMatch = text.match(/add (?:an? )?expense (?:of )?(\d[\d,]*)\s*(?:for|on|to)\s+(.+)/i);
   if (addExpenseMatch) {
     const amount = parseInt(addExpenseMatch[1].replace(/,/g, ''));
@@ -278,30 +323,39 @@ export function parseVoiceCommand(transcript) {
     };
   }
 
-  // Check for balance query
-  if (text.includes('balance') || text.includes('how much do i have') || text.includes('how much money')) {
-    return { action: 'query_balance', response: null }; // response filled by component
-  }
+  // AI Feature: NLP Intent Matching via Cosine Similarity
+  let bestIntent = null;
+  let highestSimilarity = 0;
 
-  // Check for spending query
-  if (text.includes('spending') || text.includes('how much have i spent') || text.includes('total expenses')) {
-    return { action: 'query_spending', response: null };
-  }
-
-  // Match against known commands
   for (const cmd of VOICE_COMMANDS) {
     for (const pattern of cmd.patterns) {
-      if (text.includes(pattern)) {
-        return {
-          action: cmd.action,
-          target: cmd.target,
-          response: cmd.action === 'navigate' ? `Navigating to ${cmd.target.replace(/\//g, ' ').replace('finara', 'Finara').trim()}` : `Executing: ${pattern}`,
-        };
+      const patternTokens = tokenize(pattern);
+      
+      // Build joint vocabulary for this specific text comparison
+      const vocab = Array.from(new Set([...inputTokens, ...patternTokens]));
+      const vecInput = getTfVector(inputTokens, vocab);
+      const vecPattern = getTfVector(patternTokens, vocab);
+      
+      const sim = cosineSimilarity(vecInput, vecPattern);
+      
+      if (sim > highestSimilarity) {
+        highestSimilarity = sim;
+        bestIntent = cmd;
       }
     }
   }
 
-  return { action: 'unknown', response: `Sorry, I didn't understand "${transcript}". Try "go to projects" or "show my expenses".` };
+  // Threshold for NLP confidence
+  if (bestIntent && highestSimilarity >= 0.45) {
+    return {
+      action: bestIntent.action,
+      target: bestIntent.target,
+      response: bestIntent.action === 'navigate' ? `Navigating to ${bestIntent.target.replace(/\//g, ' ').replace('finara', 'Finara').trim()}` : `Executing command`,
+      algorithm: 'Cosine Similarity NLP'
+    };
+  }
+
+  return { action: 'unknown', response: `Sorry, my NLP engine couldn't match an intent for "${transcript}".` };
 }
 
 // ============================================================

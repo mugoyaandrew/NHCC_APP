@@ -163,6 +163,11 @@ export const reportsApi = {
   generateCeo: () => api.post('/reports/ceo', {}),
 };
 
+export const mlApi = {
+  forecastBudget: (data) => fetch('/api/ml/forecast/budget', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) }).then(r => r.json()),
+  classifyRisk: (data) => fetch('/api/ml/risk/classify', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) }).then(r => r.json()),
+};
+
 function buildQuery(filters) {
   if (!filters) return '';
   const params = new URLSearchParams();

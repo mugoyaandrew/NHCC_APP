@@ -16,7 +16,7 @@ export function SocketProvider({ children }) {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const s = io('http://localhost:3001', {
+    const s = io({
       auth: { token },
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,

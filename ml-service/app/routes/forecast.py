@@ -1,7 +1,5 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-import numpy as np
-from sklearn.linear_model import LinearRegression
 
 router = APIRouter()
 

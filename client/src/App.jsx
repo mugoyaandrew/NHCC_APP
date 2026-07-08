@@ -107,6 +107,13 @@ export default function App() {
     {/* Global AI Overlays — only show when logged in */}
     {user && (
       <>
+        <button
+          onClick={() => setAdvisorOpen(true)}
+          className="fixed bottom-6 right-24 z-50 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-3 rounded-full shadow-2xl shadow-indigo-500/30 flex items-center gap-2 transition-transform hover:scale-105"
+        >
+          <span className="text-xl">✨</span>
+          <span className="font-bold text-sm tracking-wide">Finara AI</span>
+        </button>
         <VoiceNavigator onOpenAdvisor={() => setAdvisorOpen(true)} />
         <AIAdvisor isOpen={advisorOpen} onClose={() => setAdvisorOpen(false)} />
       </>

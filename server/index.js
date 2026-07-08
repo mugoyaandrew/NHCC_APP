@@ -18,6 +18,7 @@ const auditRoutes = require('./routes/audit');
 const uploadRoutes = require('./routes/uploads');
 const seedRoutes = require('./routes/seed');
 const reportRoutes = require('./routes/reports');
+const mlRoutes = require('./routes/ml');
 
 const app = express();
 const server = http.createServer(app);
@@ -30,7 +31,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const protectedMiddleware = [authMiddleware, requestContextMiddleware, idempotencyMiddleware];
 
 app.use('/api/auth', authRoutes);
-app.use('/api/users', protectedMiddleware, userRoutes);
+app.use('/api/users', authMiddleware, userRoutes);
+app.use('/api/ml', authMiddleware, mlRoutes);
 app.use('/api/audit', protectedMiddleware, auditRoutes);
 app.use('/api/uploads', protectedMiddleware, uploadRoutes);
 app.use('/api/seed', protectedMiddleware, seedRoutes);
