@@ -9,7 +9,7 @@
 ## Part 1: The Presentation Script
 
 ### 1. Introduction (1 Minute)
-"Good morning everyone. My name is [Your Name], and today I am excited to present the **NHCC Enterprise Management Portal**, an application I developed to modernize how the National Housing and Construction Company tracks projects, manages budgets, and coordinates staff. 
+"Good morning everyone. My name is Andrew Mugoya, and today I am excited to present the **NHCC Enterprise Management Portal**, an application I developed to modernize how the National Housing and Construction Company tracks projects, manages budgets, and coordinates staff. 
 Alongside the corporate portal, I also integrated **Finara AI**, a personal finance advisor for employees. What started as a basic dashboard has been completely re-architected into an enterprise-grade, highly secure, and AI-driven platform."
 
 ### 2. The UI & Aesthetics (Log in as ICT Admin)
