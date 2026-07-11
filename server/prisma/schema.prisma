@@ -145,6 +145,8 @@ model Task {
   priority    String   @default("medium")
   assigneeId  Int?     @map("assignee_id")
   dueDate     String?  @map("due_date")
+  startDate   String?  @map("start_date")
+  endDate     String?  @map("end_date")
   department  String   @default("ENGINEERING")
   isSynthetic Boolean  @default(false) @map("is_synthetic")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -205,6 +207,7 @@ model SiteReport {
   weather     String   @default("sunny")
   manpower    Int      @default(0)
   completion  Int      @default(0)
+  spent       Float    @default(0)
   workDone    String?  @map("work_done")
   materials   String?
   issues      String?
@@ -226,6 +229,9 @@ model Announcement {
   content     String?
   priority    String   @default("normal")
   authorId    Int?     @map("author_id")
+  projectId   Int?     @map("project_id")
+  startDate   String?  @map("start_date")
+  endDate     String?  @map("end_date")
   department  String?
   isSynthetic Boolean  @default(false) @map("is_synthetic")
   createdAt   DateTime @default(now()) @map("created_at")

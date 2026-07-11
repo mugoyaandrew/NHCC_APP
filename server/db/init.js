@@ -59,6 +59,10 @@ async function initializeDatabase() {
     ['procurement@nhcc.go.ug', hash, 'Grace Kemigisha', 'PROCUREMENT', 'PROCUREMENT'],
     ['ops@nhcc.go.ug', hash, 'Simon Ssekandi', 'PROJECT_IMPLEMENTER', 'OPERATIONS'],
     ['intern@nhcc.go.ug', hash, 'Rose Atim', 'INTERN', 'ENGINEERING'],
+    ['deputy@nhcc.go.ug', hash, 'Patrick Kiggundu', 'DEPUTY_CEO', 'OPERATIONS'],
+    ['cao@nhcc.go.ug', hash, 'Dorothy Nabatanzi', 'CAO', 'OPERATIONS'],
+    ['ops-head@nhcc.go.ug', hash, 'Henry Lubega', 'OPERATIONS', 'OPERATIONS'],
+    ['law@nhcc.go.ug', hash, 'Samuel Wamala', 'LAW', 'LEGAL'],
     ['demo@finara.app', hash, 'Demo User', 'STAFF', 'OPERATIONS'],
   ];
   for (const u of users) {

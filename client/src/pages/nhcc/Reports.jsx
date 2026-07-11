@@ -5,11 +5,13 @@ import { Download } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { reportsApi, usersApi } from '../../lib/api';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6'];
 const RAG_COLORS = { green: '#22c55e', amber: '#f59e0b', red: '#ef4444' };
 
 export default function Reports() {
+  const { user: currentUser } = useAuth();
   const { formatCurrency } = useSettings();
   const [generatedReport, setGeneratedReport] = useState(null);
   const { data: stats, isLoading } = useQuery({ queryKey: ['dashboard-stats'], queryFn: usersApi.dashboardStats });
@@ -46,14 +48,16 @@ export default function Reports() {
               <Download className="w-4 h-4" /> Open CEO Report
             </a>
           )}
-          <button
-            onClick={() => reportMutation.mutate()}
-            disabled={reportMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2.5 bg-nhcc-blue-500 hover:bg-nhcc-blue-600 disabled:opacity-60 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            {reportMutation.isPending ? 'Generating...' : 'Generate CEO Report'}
-          </button>
+          {['CEO', 'DEPUTY_CEO', 'CAO'].includes(currentUser?.role) && (
+            <button
+              onClick={() => reportMutation.mutate()}
+              disabled={reportMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2.5 bg-nhcc-blue-500 hover:bg-nhcc-blue-600 disabled:opacity-60 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all"
+            >
+              <Download className="w-4 h-4" />
+              {reportMutation.isPending ? 'Generating...' : 'Generate CEO Report'}
+            </button>
+          )}
         </div>
       </div>
 

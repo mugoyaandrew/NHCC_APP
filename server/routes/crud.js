@@ -98,21 +98,39 @@ async function enrichRows(rows, tableName) {
   return output;
 }
 
-function applyRbacFilter(tableName, user, where) {
-  if (['ICT', 'CEO', 'DEPUTY_CEO'].includes(user.role)) return where;
-  
-  if (user.role === 'PROJECT_IMPLEMENTER') {
-    if (tableName === 'projects') {
-      where.OR = [{ managerId: user.id }, { tasks: { some: { assigneeId: user.id } } }];
-    } else if (tableName === 'tasks') {
-      where.assigneeId = user.id;
-    } else if (tableName === 'documents') {
-      where.uploadedBy = user.id;
-    } else if (tableName === 'approvals') {
-      where.requestedBy = user.id;
-    } else if (tableName === 'site_reports') {
-      where.reportedBy = user.id;
+async function applyRbacFilter(tableName, user, where) {
+  if (['messages', 'notifications'].includes(tableName)) {
+    if (tableName === 'messages') {
+      where.OR = [{ senderId: user.id }, { recipientId: user.id }];
+    } else if (tableName === 'notifications') {
+      where.userId = user.id;
     }
+    return where;
+  }
+
+  const execRoles = ['DEPUTY_CEO', 'CAO', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'ENGINEERING', 'ICT'];
+  if (execRoles.includes(user.role)) return where;
+  
+  if (tableName === 'projects') {
+    const userTasks = await prisma.task.findMany({ where: { assigneeId: user.id }, select: { projectId: true } });
+    const pIds = userTasks.map(t => t.projectId).filter(Boolean);
+    where.OR = [{ managerId: user.id }, { id: { in: pIds } }];
+  } else if (tableName === 'tasks') {
+    const userProjects = await prisma.project.findMany({ where: { managerId: user.id }, select: { id: true } });
+    const pIds = userProjects.map(p => p.id);
+    where.OR = [{ assigneeId: user.id }, { projectId: { in: pIds } }];
+  } else if (tableName === 'documents') {
+    const userProjects = await prisma.project.findMany({ where: { managerId: user.id }, select: { id: true } });
+    const pIds = userProjects.map(p => p.id);
+    where.OR = [{ uploadedBy: user.id }, { projectId: { in: pIds } }];
+  } else if (tableName === 'approvals') {
+    where.requestedBy = user.id;
+  } else if (tableName === 'site_reports') {
+    const userProjects = await prisma.project.findMany({ where: { managerId: user.id }, select: { id: true } });
+    const pIds = userProjects.map(p => p.id);
+    where.OR = [{ reportedBy: user.id }, { projectId: { in: pIds } }];
+  } else if (tableName === 'calendar_events') {
+    where.createdBy = user.id;
   }
   return where;
 }
@@ -137,7 +155,7 @@ function createCrudRouter(tableName, options = {}) {
         }
       }
 
-      if (!userScoped) where = applyRbacFilter(tableName, req.user, where);
+      if (!userScoped) where = await applyRbacFilter(tableName, req.user, where);
 
       let rows = await delegate.findMany({ where, orderBy: { id: 'desc' } });
       if (!userScoped) rows = await enrichRows(rows, tableName);
@@ -155,7 +173,7 @@ function createCrudRouter(tableName, options = {}) {
       
       let where = { id };
       if (userScoped) where.userId = req.user.id;
-      if (!userScoped) where = applyRbacFilter(tableName, req.user, where);
+      if (!userScoped) where = await applyRbacFilter(tableName, req.user, where);
 
       const item = await delegate.findUnique({ where });
       if (!item) return res.status(404).json({ error: 'Not found' });
@@ -214,6 +232,15 @@ function createCrudRouter(tableName, options = {}) {
         updated = await delegate.update({ where: { id }, data: fields.has('version') ? { ...data, version: { increment: 1 } } : data });
       }
 
+      if (tableName === 'tasks' && updated.projectId) {
+        const totalTasks = await delegate.count({ where: { projectId: updated.projectId } });
+        const completedTasks = await delegate.count({ where: { projectId: updated.projectId, status: 'done' } });
+        if (totalTasks > 0) {
+          const completion = Math.round((completedTasks / totalTasks) * 100);
+          await prisma.project.update({ where: { id: updated.projectId }, data: { completion } });
+        }
+      }
+
       broadcastCrudEvent(tableName, 'updated', toApiShape(updated), req.user);
       res.json(toApiShape(updated));
     } catch (err) {
@@ -229,7 +256,13 @@ function createCrudRouter(tableName, options = {}) {
         const existing = await delegate.findFirst({ where: { id, userId: req.user.id } });
         if (!existing) return res.status(404).json({ error: 'Not found' });
       }
-      await delegate.delete({ where: { id } });
+      
+      if (tableName === 'projects') {
+        await delegate.update({ where: { id }, data: { status: 'archived' } });
+      } else {
+        await delegate.delete({ where: { id } });
+      }
+      
       broadcastCrudEvent(tableName, 'deleted', { id }, req.user);
       res.json({ success: true });
     } catch (err) {

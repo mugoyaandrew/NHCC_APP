@@ -90,9 +90,23 @@ export const projectsApi = {
 
 export const tasksApi = {
   list: (filters) => api.get('/tasks' + buildQuery(filters)),
+  get: (id) => api.get(`/tasks/${id}`),
   create: (data) => api.post('/tasks', data),
   update: (id, data) => api.put(`/tasks/${id}`, data),
   delete: (id) => api.delete(`/tasks/${id}`),
+};
+
+export const subtasksApi = {
+  list: (taskId) => api.get(`/subtasks/${taskId}`),
+  create: (taskId, data) => api.post(`/subtasks/${taskId}`, data),
+  toggle: (id) => api.put(`/subtasks/${id}/toggle`, {}),
+  delete: (id) => api.delete(`/subtasks/${id}`),
+};
+
+export const commentsApi = {
+  list: (taskId) => api.get(`/comments/${taskId}`),
+  create: (taskId, data) => api.post(`/comments/${taskId}`, data),
+  delete: (id) => api.delete(`/comments/${id}`),
 };
 
 export const documentsApi = {
@@ -144,6 +158,7 @@ export const messagesApi = {
 
 export const usersApi = {
   list: () => api.get('/users'),
+  create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   dashboardStats: () => api.get('/users/stats/dashboard'),

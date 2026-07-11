@@ -2,6 +2,8 @@ const { PrismaClient } = require('@prisma/client');
 const { getRequestContext } = require('./async-context');
 
 const prismaBase = new PrismaClient();
+prismaBase.$executeRawUnsafe('PRAGMA journal_mode=WAL;').catch(() => {});
+prismaBase.$executeRawUnsafe('PRAGMA busy_timeout=5000;').catch(() => {});
 
 const AUDITED_OPERATIONS = new Set(['create', 'update', 'delete']);
 const SKIP_MODELS = new Set(['AuditLog', 'IdempotencyKey']);

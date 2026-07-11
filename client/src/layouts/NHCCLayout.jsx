@@ -11,19 +11,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 
 const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'HR', 'DEPUTY_CEO'] },
-  { label: 'Projects', icon: FolderKanban, path: '/projects', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'DEPUTY_CEO'] },
-  { label: 'Tasks', icon: CheckSquare, path: '/tasks', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'DEPUTY_CEO'] },
-  { label: 'Messages', icon: MessageSquare, path: '/messages', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'HR', 'DEPUTY_CEO', 'CEO'] },
-  { label: 'Documents', icon: FileText, path: '/documents', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'DEPUTY_CEO'] },
-  { label: 'Calendar', icon: Calendar, path: '/calendar', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'HR', 'DEPUTY_CEO'] },
-  { label: 'Announcements', icon: Megaphone, path: '/announcements', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'HR', 'DEPUTY_CEO', 'CEO'] },
-  { label: 'Approvals', icon: ShieldCheck, path: '/approvals', roles: ['ICT', 'CHIEF_ENGINEER', 'FINANCE', 'HR', 'DEPUTY_CEO'] },
-  { label: 'Site Reports', icon: HardHat, path: '/site-reports', roles: ['ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'DEPUTY_CEO'] },
-  { label: 'Reports', icon: BarChart3, path: '/reports', roles: ['CEO', 'FINANCE', 'ICT', 'DEPUTY_CEO'] },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['CEO', 'CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'HR', 'DEPUTY_CEO', 'OPERATIONS', 'STAFF', 'INTERN'] },
+  { label: 'Projects', icon: FolderKanban, path: '/projects', roles: ['CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'DEPUTY_CEO', 'OPERATIONS', 'FINANCE'] },
+  { label: 'Tasks', icon: CheckSquare, path: '/tasks', roles: ['CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'DEPUTY_CEO', 'OPERATIONS', 'STAFF', 'INTERN'] },
+  { label: 'Messages', icon: MessageSquare, path: '/messages', roles: ['CEO', 'CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'HR', 'DEPUTY_CEO', 'OPERATIONS', 'LAW', 'PROCUREMENT', 'STAFF', 'INTERN'] },
+  { label: 'Documents', icon: FileText, path: '/documents', roles: ['CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'DEPUTY_CEO', 'OPERATIONS', 'LAW', 'HR', 'PROCUREMENT'] },
+  { label: 'Calendar', icon: Calendar, path: '/calendar', roles: ['CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'HR', 'DEPUTY_CEO', 'OPERATIONS', 'FINANCE', 'LAW', 'PROCUREMENT', 'STAFF', 'INTERN'] },
+  { label: 'Announcements', icon: Megaphone, path: '/announcements', roles: ['CEO', 'CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'FINANCE', 'HR', 'DEPUTY_CEO', 'OPERATIONS', 'LAW', 'PROCUREMENT', 'STAFF', 'INTERN'] },
+  { label: 'Approvals', icon: ShieldCheck, path: '/approvals', roles: ['CEO', 'CAO', 'ICT', 'CHIEF_ENGINEER', 'FINANCE', 'HR', 'DEPUTY_CEO', 'OPERATIONS', 'LAW', 'PROCUREMENT'] },
+  { label: 'Site Reports', icon: HardHat, path: '/site-reports', roles: ['CAO', 'ICT', 'CHIEF_ENGINEER', 'PROJECT_IMPLEMENTER', 'DEPUTY_CEO', 'OPERATIONS', 'FINANCE'] },
+  { label: 'Reports', icon: BarChart3, path: '/reports', roles: ['CEO', 'CAO', 'FINANCE', 'ICT', 'DEPUTY_CEO'] },
   { label: 'User Management', icon: Users, path: '/users', roles: ['HR', 'ICT', 'DEPUTY_CEO'] },
-  { label: 'Audit Logs', icon: ClipboardList, path: '/audit', roles: ['ICT'] },
-  { label: 'Admin Settings', icon: Settings, path: '/admin', roles: ['ICT'] },
+  { label: 'Audit Logs', icon: ClipboardList, path: '/audit', roles: ['ICT', 'DEPUTY_CEO'] },
+  { label: 'Admin Settings', icon: Settings, path: '/admin', roles: ['ICT', 'CEO', 'DEPUTY_CEO'] },
 ];
 
 export default function NHCCLayout({ children }) {

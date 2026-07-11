@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FolderKanban, Plus, MapPin, Calendar, X, Eye } from 'lucide-react';
@@ -11,13 +11,13 @@ const ragColors = { green: '#22c55e', amber: '#f59e0b', red: '#ef4444' };
 
 export default function Projects() {
   const { formatCurrency, formatDate } = useSettings();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', location: '', budget: '', status: 'planning', rag_status: 'green' });
   const queryClient = useQueryClient();
   const { data: projects = [], isLoading } = useQuery({ queryKey: ['projects'], queryFn: () => projectsApi.list() });
   const createMutation = useMutation({ mutationFn: (d) => projectsApi.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['projects'] }); setShowForm(false); setForm({ name: '', description: '', location: '', budget: '', status: 'planning', rag_status: 'green' }); } });
-  const deleteMutation = useMutation({ mutationFn: (id) => projectsApi.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }) });
 
   const filtered = filter === 'all' ? projects : projects.filter(p => p.status === filter);
   const filters = ['all', 'planning', 'in_progress', 'completed', 'on_hold'];
@@ -48,12 +48,14 @@ export default function Projects() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((project, i) => (
           <motion.div key={project.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 card-hover">
+            className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 card-hover relative group cursor-pointer"
+            onClick={() => navigate(`/projects/${project.id}`)}
+          >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-3 h-3 rounded-full" style={{ background: ragColors[project.rag_status] || '#94a3b8' }} />
-                  <h3 className="font-semibold text-slate-800 dark:text-white text-sm">{project.name}</h3>
+                  <h3 className="font-semibold text-slate-800 dark:text-white text-sm group-hover:text-nhcc-blue-500 transition-colors">{project.name}</h3>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-slate-500">
                   <MapPin className="w-3 h-3" /> {project.location || 'No location'}
@@ -73,16 +75,31 @@ export default function Projects() {
                   <span className="font-medium text-slate-700 dark:text-slate-300">{project.completion || 0}%</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
-                  <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all" style={{ width: `${project.completion || 0}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all" style={{ width: `${Math.min(project.completion || 0, 100)}%` }} />
                 </div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Budget</span>
-                <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(project.budget)}</span>
+              
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-500">Budget Utilization</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {project.budget > 0 ? Math.round(((project.spent || 0) / project.budget) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
+                  <div className={`h-full rounded-full transition-all ${project.budget > 0 && (project.spent / project.budget) > 1 ? 'bg-red-500' : 'bg-gradient-to-r from-emerald-400 to-green-500'}`} style={{ width: `${Math.min(project.budget > 0 ? ((project.spent || 0) / project.budget) * 100 : 0, 100)}%` }} />
+                </div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Spent</span>
-                <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(project.spent)}</span>
+
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg">
+                  <p className="text-[10px] text-slate-500 mb-0.5">Budget</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-white truncate">{formatCurrency(project.budget)}</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg">
+                  <p className="text-[10px] text-slate-500 mb-0.5">Spent</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-white truncate">{formatCurrency(project.spent)}</p>
+                </div>
               </div>
             </div>
 
@@ -91,10 +108,9 @@ export default function Projects() {
                 <Calendar className="w-3 h-3" /> {formatDate(project.start_date)}
               </div>
               <div className="flex items-center gap-3">
-                <Link to={`/projects/${project.id}`} className="inline-flex items-center gap-1 text-xs font-medium text-nhcc-blue-500 hover:text-nhcc-blue-700 transition-colors">
-                  <Eye className="w-3 h-3" /> View
+                <Link to={`/projects/${project.id}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs font-medium text-nhcc-blue-500 hover:text-nhcc-blue-700 transition-colors">
+                  <Eye className="w-3 h-3" /> View Details
                 </Link>
-                <button onClick={() => deleteMutation.mutate(project.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Delete</button>
               </div>
             </div>
           </motion.div>

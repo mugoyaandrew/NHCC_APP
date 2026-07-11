@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckSquare, Plus, X, Clock, AlertTriangle, Flag } from 'lucide-react';
 import { tasksApi } from '../../lib/api';
 import { useSettings } from '../../contexts/SettingsContext';
+import TaskDetailModal from './modals/TaskDetailModal';
 
 const columns = [
   { id: 'backlog', label: 'Backlog', color: 'bg-slate-500' },
@@ -18,9 +19,10 @@ export default function Tasks() {
   const { formatDate } = useSettings();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', status: 'backlog' });
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [form, setForm] = useState({ title: '', description: '', priority: 'medium', status: 'backlog', start_date: '', end_date: '' });
   const { data: tasks = [], isLoading } = useQuery({ queryKey: ['tasks'], queryFn: () => tasksApi.list() });
-  const createMutation = useMutation({ mutationFn: (d) => tasksApi.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setShowForm(false); setForm({ title: '', description: '', priority: 'medium', status: 'backlog' }); } });
+  const createMutation = useMutation({ mutationFn: (d) => tasksApi.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setShowForm(false); setForm({ title: '', description: '', priority: 'medium', status: 'backlog', start_date: '', end_date: '' }); } });
   const updateMutation = useMutation({ mutationFn: ({ id, data }) => tasksApi.update(id, data), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }) });
 
   const moveTask = (taskId, newStatus) => {
@@ -54,8 +56,9 @@ export default function Tasks() {
               <div className="space-y-3 min-h-[200px] bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-3 border border-slate-200 dark:border-slate-700">
                 {colTasks.map((task, i) => (
                   <motion.div key={task.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="kanban-card bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-                    <h4 className="font-medium text-sm text-slate-800 dark:text-white mb-2">{task.title}</h4>
+                    onClick={() => setSelectedTaskId(task.id)}
+                    className="kanban-card bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-nhcc-blue-500 transition-colors group">
+                    <h4 className="font-medium text-sm text-slate-800 dark:text-white mb-2 group-hover:text-nhcc-blue-500 transition-colors">{task.title}</h4>
                     {task.project_name && (
                       <p className="text-xs text-slate-400 mb-2">📁 {task.project_name}</p>
                     )}
@@ -77,7 +80,7 @@ export default function Tasks() {
                     {/* Quick move */}
                     <div className="mt-2 flex gap-1 flex-wrap">
                       {columns.filter(c => c.id !== col.id).map(c => (
-                        <button key={c.id} onClick={() => moveTask(task.id, c.id)}
+                        <button key={c.id} onClick={(e) => { e.stopPropagation(); moveTask(task.id, c.id); }}
                           className="px-2 py-0.5 text-[9px] bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded text-slate-500 transition-colors">
                           → {c.label}
                         </button>
@@ -108,10 +111,27 @@ export default function Tasks() {
               <select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none">
                 <option value="low">Low Priority</option><option value="medium">Medium Priority</option><option value="high">High Priority</option>
               </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">Start Date</label>
+                  <input type="date" value={form.start_date} onChange={e => setForm({...form, start_date: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 mb-1 block">End Date (Due)</label>
+                  <input type="date" value={form.end_date} onChange={e => setForm({...form, end_date: e.target.value, due_date: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none" />
+                </div>
+              </div>
               <button onClick={() => createMutation.mutate(form)} className="w-full py-2.5 bg-nhcc-blue-500 hover:bg-nhcc-blue-600 text-white rounded-xl font-medium transition-all">Create Task</button>
             </div>
           </motion.div>
         </div>
+      )}
+
+      {selectedTaskId && (
+        <TaskDetailModal 
+          taskId={selectedTaskId} 
+          onClose={() => setSelectedTaskId(null)} 
+        />
       )}
     </div>
   );

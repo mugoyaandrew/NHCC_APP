@@ -38,6 +38,10 @@ app.use('/api/uploads', protectedMiddleware, uploadRoutes);
 app.use('/api/seed', protectedMiddleware, seedRoutes);
 app.use('/api/reports', protectedMiddleware, reportRoutes);
 
+// Phase 3 new routes
+app.use('/api/subtasks', protectedMiddleware, require('./routes/subtasks'));
+app.use('/api/comments', protectedMiddleware, require('./routes/comments'));
+
 app.use('/api/income', protectedMiddleware, createCrudRouter('income', { userScoped: true, allowedFilters: ['category', 'frequency', 'is_active'] }));
 app.use('/api/expenses', protectedMiddleware, createCrudRouter('expenses', { userScoped: true, allowedFilters: ['category', 'subcategory', 'is_recurring'] }));
 app.use('/api/goals', protectedMiddleware, createCrudRouter('goals', { userScoped: true }));

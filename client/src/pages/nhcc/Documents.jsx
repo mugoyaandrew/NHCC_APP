@@ -22,7 +22,34 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ title: '', type: 'report', expiry_date: '' });
   const { data: docs = [], isLoading } = useQuery({ queryKey: ['documents'], queryFn: () => documentsApi.list() });
-  const createMutation = useMutation({ mutationFn: d => documentsApi.create(d), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['documents'] }); setShowForm(false); } });
+  
+  const createMutation = useMutation({ 
+    mutationFn: d => documentsApi.create(d),
+    onMutate: async (newDoc) => {
+      await queryClient.cancelQueries({ queryKey: ['documents'] });
+      const previousDocs = queryClient.getQueryData(['documents']);
+      queryClient.setQueryData(['documents'], old => {
+        const optimisticDoc = {
+          id: Date.now(),
+          title: newDoc.title,
+          type: newDoc.type,
+          project_id: newDoc.project_id,
+          expiry_date: newDoc.expiry_date,
+          file_size: newDoc.file_size || 0,
+          created_at: new Date().toISOString()
+        };
+        return [optimisticDoc, ...(old || [])];
+      });
+      setShowForm(false);
+      return { previousDocs };
+    },
+    onError: (err, newDoc, context) => {
+      queryClient.setQueryData(['documents'], context.previousDocs);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    }
+  });
   const deleteMutation = useMutation({ mutationFn: id => documentsApi.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documents'] }) });
 
   const handleFileUpload = async (files) => {
@@ -79,47 +106,142 @@ export default function Documents() {
               </tr>
             </thead>
             <tbody>
-              {docs.map((doc, i) => (
-                <motion.tr key={doc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                  className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                  <td className="px-5 py-3"><div className="flex items-center gap-2"><FileText className="w-4 h-4 text-slate-400" /><span className="font-medium text-slate-800 dark:text-white">{doc.title}</span></div></td>
-                  <td className="px-5 py-3"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${typeColors[doc.type] || 'bg-gray-100 text-gray-600'}`}>{typeIcons[doc.type] || '📄'} {doc.type}</span></td>
-                  <td className="px-5 py-3 text-slate-500">{doc.project_name || '—'}</td>
-                  <td className="px-5 py-3 text-slate-500">{doc.uploader_name || '—'}</td>
-                  <td className="px-5 py-3 text-slate-500">{formatSize(doc.file_size)}</td>
-                  <td className="px-5 py-3">
-                    {doc.expiry_date ? (
-                      <span className={`flex items-center gap-1 ${isExpiringSoon(doc.expiry_date) ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>
-                        {isExpiringSoon(doc.expiry_date) && <AlertTriangle className="w-3 h-3" />}
-                        {formatDate(doc.expiry_date)}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <button onClick={() => deleteMutation.mutate(doc.id)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
-                  </td>
-                </motion.tr>
-              ))}
+              {docs.map((doc, i) => {
+                const expiringSoon = isExpiringSoon(doc.expiry_date);
+                return (
+                  <motion.tr key={doc.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                    className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-400" />
+                        <span className="font-medium text-slate-800 dark:text-white">{doc.title}</span>
+                        {expiringSoon && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">EXPIRING</span>}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${typeColors[doc.type] || 'bg-gray-100 text-gray-600'}`}>{typeIcons[doc.type] || '📄'} {doc.type}</span></td>
+                    <td className="px-5 py-3 text-slate-500">{doc.project_name || '—'}</td>
+                    <td className="px-5 py-3 text-slate-500">{doc.uploader_name || '—'}</td>
+                    <td className="px-5 py-3 text-slate-500">{formatSize(doc.file_size)}</td>
+                    <td className="px-5 py-3">
+                      {doc.expiry_date ? (
+                        <span className={`flex items-center gap-1 ${expiringSoon ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>
+                          {expiringSoon && <AlertTriangle className="w-3 h-3" />}
+                          {formatDate(doc.expiry_date)}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <button onClick={() => deleteMutation.mutate(doc.id)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
-            <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-bold dark:text-white">Add Document</h2><button onClick={() => setShowForm(false)}><X className="w-5 h-5" /></button></div>
-            <div className="space-y-3">
-              <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Document Title" className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 dark:text-white text-sm outline-none" />
-              <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 dark:text-white text-sm outline-none">
+        <MultiStepDocUpload 
+          onClose={() => setShowForm(false)} 
+          onComplete={(data) => createMutation.mutate(data)} 
+        />
+      )}
+    </div>
+  );
+}
+
+function MultiStepDocUpload({ onClose, onComplete }) {
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState({ title: '', type: 'report', expiry_date: '', project_id: '', file: null });
+  const { data: projects = [] } = useQuery({ queryKey: ['projects'], queryFn: () => documentsApi.list().then(() => fetch('/api/projects').then(r=>r.json())) }); // quick fetch for projects
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+            Upload Document - Step {step} of 3
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X className="w-5 h-5 text-slate-500" /></button>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="flex gap-2 mb-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className={`h-1.5 flex-1 rounded-full ${step >= i ? 'bg-nhcc-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
+          ))}
+        </div>
+
+        <div className="space-y-4 min-h-[200px]">
+          {step === 1 && (
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Select File</label>
+              <div 
+                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-nhcc-blue-500 transition-colors"
+                onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.onchange = e => setData({...data, file: e.target.files[0], title: e.target.files[0].name.split('.')[0]}); input.click(); }}
+              >
+                <FileUp className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                  {data.file ? data.file.name : 'Click to select file'}
+                </p>
+                {data.file && <p className="text-xs text-slate-500 mt-1">{formatSize(data.file.size)}</p>}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Document Details</label>
+              <input value={data.title} onChange={e => setData({...data, title: e.target.value})} placeholder="Document Title" className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-nhcc-blue-500" />
+              <select value={data.project_id} onChange={e => setData({...data, project_id: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-nhcc-blue-500">
+                <option value="">Select Project (Optional)</option>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <select value={data.type} onChange={e => setData({...data, type: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-nhcc-blue-500">
                 {Object.keys(typeIcons).map(t => <option key={t} value={t}>{typeIcons[t]} {t}</option>)}
               </select>
-              <input type="date" value={form.expiry_date} onChange={e => setForm({...form, expiry_date: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 dark:text-white text-sm outline-none" />
-              <button onClick={() => createMutation.mutate(form)} className="w-full py-2.5 bg-nhcc-blue-500 text-white rounded-xl font-medium">Add Document</button>
+              <input type="date" value={data.expiry_date} onChange={e => setData({...data, expiry_date: e.target.value})} className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-nhcc-blue-500" />
             </div>
-          </motion.div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Review Summary</label>
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 space-y-2 text-sm border border-slate-100 dark:border-slate-600">
+                <div className="flex justify-between"><span className="text-slate-500">File:</span> <span className="font-medium text-slate-800 dark:text-white">{data.file?.name || 'None'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Title:</span> <span className="font-medium text-slate-800 dark:text-white">{data.title}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Type:</span> <span className="font-medium text-slate-800 dark:text-white">{data.type}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Project ID:</span> <span className="font-medium text-slate-800 dark:text-white">{data.project_id || 'None'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Expiry:</span> <span className="font-medium text-slate-800 dark:text-white">{data.expiry_date || 'No expiry'}</span></div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="flex justify-between gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+          {step > 1 ? (
+            <button onClick={() => setStep(step - 1)} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">Back</button>
+          ) : <div />}
+          
+          {step < 3 ? (
+            <button 
+              onClick={() => setStep(step + 1)} 
+              disabled={step === 1 && !data.file}
+              className="px-6 py-2 bg-nhcc-blue-500 text-white rounded-xl font-medium disabled:opacity-50 transition-colors hover:bg-nhcc-blue-600"
+            >
+              Next
+            </button>
+          ) : (
+            <button 
+              onClick={() => onComplete({ title: data.title, type: data.type, project_id: data.project_id ? Number(data.project_id) : undefined, expiry_date: data.expiry_date, file_size: data.file?.size })} 
+              className="px-6 py-2 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all"
+            >
+              Upload
+            </button>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

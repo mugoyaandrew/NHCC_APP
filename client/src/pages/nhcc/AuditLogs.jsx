@@ -85,7 +85,7 @@ export default function AuditLogs() {
                   transition={{ delay: i * 0.02 }}
                   className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
                 >
-                  <td className="px-5 py-3 text-slate-500">{formatDate(log.created_at)}</td>
+                  <td className="px-5 py-3 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
                   <td className="px-5 py-3">
                     <span className={`px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide ${operationColors[log.operation] || 'bg-slate-100 text-slate-700'}`}>
                       {log.operation} BY {log.user_email?.split('@')[0].toUpperCase() || 'SYSTEM'}

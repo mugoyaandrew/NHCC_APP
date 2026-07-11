@@ -21,6 +21,32 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    if (!canManageUsers(req.user)) return res.status(403).json({ error: 'User management requires CEO or ICT access' });
+    const { email, password, full_name, role, department } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return res.status(409).json({ error: 'Email already registered' });
+
+    const bcrypt = require('bcryptjs');
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: bcrypt.hashSync(password, 10),
+        fullName: full_name || 'New User',
+        role: role || 'STAFF',
+        department: department || 'GENERAL',
+      },
+    });
+    const { passwordHash, ...safe } = user;
+    res.status(201).json(toApiShape(safe));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     if (!canManageUsers(req.user)) return res.status(403).json({ error: 'User management requires CEO or ICT access' });

@@ -5,7 +5,7 @@ const { toApiShape } = require('./crud');
 const router = express.Router();
 
 function canViewAudit(user) {
-  return ['CEO', 'DEPUTY_CEO', 'ICT'].includes(user.role);
+  return ['ICT', 'DEPUTY_CEO'].includes(user.role);
 }
 
 router.get('/', async (req, res) => {
